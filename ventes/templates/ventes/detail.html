@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block titre %}Vente {{ vente.numero }} — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 d-print-none">
+  <h1 class="h3 mb-0">Vente {{ vente.numero }}
+    {% if vente.statut == "annulee" %}<span class="badge text-bg-danger fs-6">Annulée</span>{% endif %}
+  </h1>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if vente.est_annulable and perms.ventes.add_retourvente %}
+      {% if not vente.est_entierement_retournee %}
+        <a href="{% url 'ventes:retour' vente.pk %}" class="btn btn-outline-primary">Enregistrer un retour</a>
+      {% endif %}
+      <a href="{% url 'ventes:annuler' vente.pk %}" class="btn btn-outline-danger">Annuler la vente</a>
+    {% endif %}
+    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimer</button>
+    <a href="{% url 'ventes:liste' %}" class="btn btn-outline-secondary">Retour à l'historique</a>
+  </div>
+</div>
+
+<div class="card card-body mb-4">
+  <div class="d-none d-print-block mb-3"><h2 class="h4">PharmaGest — Reçu de vente {{ vente.numero }}</h2></div>
+  <dl class="row mb-0">
+    <dt class="col-sm-3">Date</dt><dd class="col-sm-9">{{ vente.date|date:"d/m/Y H:i" }}</dd>
+    <dt class="col-sm-3">Client</dt><dd class="col-sm-9">{% if vente.client %}<a href="{% url 'clients:detail' vente.client.pk %}">{{ vente.client }}</a>{% else %}Vente comptoir{% endif %}</dd>
+    <dt class="col-sm-3">Vendeur</dt><dd class="col-sm-9">{{ vente.vendeur.username }}</dd>
+    <dt class="col-sm-3">Paiement</dt><dd class="col-sm-9">{{ vente.libelle_paiement }}</dd>
+  </dl>
+</div>
+
+<h2 class="h5">Lignes</h2>
+<div class="table-responsive bg-white rounded shadow-sm mb-4">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Médicament</th><th>Lot délivré</th><th class="text-end">Quantité</th><th class="text-end">Prix appliqué</th><th class="text-end">Sous-total</th><th class="text-end">Retourné</th></tr></thead>
+    <tbody>
+      {% for l in lignes %}
+      <tr>
+        <td>{{ l.medicament }}</td>
+        <td>{{ l.lot.numero_lot }}</td>
+        <td class="text-end">{{ l.quantite }}</td>
+        <td class="text-end">{{ l.prix_applique }}</td>
+        <td class="text-end">{{ l.sous_total }}</td>
+        <td class="text-end">{{ l.quantite_retournee }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr><th colspan="4" class="text-end">Total</th><th class="text-end fs-5">{{ vente.total }}</th><th></th></tr></tfoot>
+  </table>
+</div>
+
+<h2 class="h5">Paiements</h2>
+<div class="table-responsive bg-white rounded shadow-sm mb-3">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Date</th><th>Mode</th><th class="text-end">Montant</th><th>Statut</th><th>Référence</th><th class="d-print-none text-end">Action</th></tr></thead>
+    <tbody>
+      {% for p in paiements %}
+      <tr>
+        <td>{{ p.date|date:"d/m/Y H:i" }}</td>
+        <td>{{ p.get_mode_display }}</td>
+        <td class="text-end">{{ p.montant }}</td>
+        <td>
+          {% if p.statut == "confirme" %}<span class="badge text-bg-success">{{ p.get_statut_display }}</span>
+          {% elif p.statut == "en_attente" %}<span class="badge text-bg-warning">{{ p.get_statut_display }}</span>
+          {% else %}<span class="badge text-bg-danger">{{ p.get_statut_display }}</span>{% endif %}
+        </td>
+        <td>{{ p.reference_transaction|default:"—" }}</td>
+        <td class="d-print-none text-end">
+          {% if p.statut == "en_attente" and perms.ventes.change_paiement and vente.est_annulable %}
+          <form method="post" action="{% url 'ventes:paiement_confirmer' p.pk %}" class="d-inline-flex gap-1">
+            {% csrf_token %}
+            {% if p.mode != "especes" %}<input type="text" class="form-control form-control-sm" name="reference" placeholder="Réf. transaction vérifiée" value="{{ p.reference_transaction }}" style="width:200px">{% endif %}
+            <button type="submit" class="btn btn-sm btn-success">Confirmer</button>
+          </form>
+          <form method="post" action="{% url 'ventes:paiement_echoue' p.pk %}" class="d-inline">
+            {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-danger">Échoué</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-3">Aucun paiement.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if vente.est_annulable and vente.reste_a_payer > 0 and perms.ventes.add_paiement %}
+<form method="post" action="{% url 'ventes:paiement_ajouter' vente.pk %}" class="card card-body mb-4 d-print-none">
+  {% csrf_token %}
+  <div class="fw-semibold mb-2">Ajouter un paiement (reste à payer : {{ vente.reste_a_payer }})</div>
+  <div class="row g-2 align-items-end">
+    <div class="col-6 col-md-3"><label class="form-label small mb-0">Mode</label>
+      <select class="form-select" name="mode">{% for valeur, libelle in modes %}<option value="{{ valeur }}">{{ libelle }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-3"><label class="form-label small mb-0">Montant</label>
+      <input type="text" class="form-control" name="montant" value="{{ vente.reste_a_payer }}"></div>
+    <div class="col-8 col-md-4"><label class="form-label small mb-0">Référence (facultatif)</label>
+      <input type="text" class="form-control" name="reference"></div>
+    <div class="col-4 col-md-2 d-grid"><button type="submit" class="btn btn-outline-success">Ajouter</button></div>
+  </div>
+</form>
+{% endif %}
+
+{% if retours %}
+<h2 class="h5">Retours et remboursements</h2>
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Date</th><th>Médicament</th><th class="text-end">Quantité</th><th class="text-end">Remboursé</th><th>Remis en stock</th><th>Motif</th><th>Par</th></tr></thead>
+    <tbody>
+      {% for r in retours %}
+      <tr>
+        <td>{{ r.date|date:"d/m/Y H:i" }}</td>
+        <td>{{ r.ligne_vente.medicament }}</td>
+        <td class="text-end">{{ r.quantite }}</td>
+        <td class="text-end">{{ r.montant_rembourse }}</td>
+        <td>{{ r.remis_en_stock|yesno:"Oui,Non" }}</td>
+        <td>{{ r.motif }}</td>
+        <td>{{ r.enregistre_par.username }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr><th colspan="3" class="text-end">Total remboursé</th><th class="text-end">{{ vente.total_rembourse }}</th><th colspan="3"></th></tr></tfoot>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

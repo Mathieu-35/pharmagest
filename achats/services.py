@@ -4,7 +4,7 @@ Une commande ne modifie jamais le stock (RG04). Seule la réception l'augmente,
 une seule fois (RG05), dans une transaction, avec un mouvement de stock traçable.
 """
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 
 from stock.models import LotStock, MouvementStock
 from utilisateurs import audit
@@ -55,11 +55,13 @@ def receptionner(commande_id, utilisateur, jeton, saisies):
         return _receptionner(commande_id, utilisateur, jeton, saisies), True
     except _DejaEnregistree as deja:
         return deja.reception, False
-    except IntegrityError:
+    except (IntegrityError, OperationalError) as erreur:
         # Deux envois simultanés du même formulaire : l'un des deux a déjà gagné
         existante = jeton and ReceptionAchat.objects.filter(jeton=jeton).first()
         if existante:
             return existante, False
+        if isinstance(erreur, OperationalError):
+            raise ErreurAchat("Une autre opération est en cours : réessayez dans un instant.")
         raise
 
 

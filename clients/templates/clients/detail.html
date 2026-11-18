@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titre %}{{ client }} — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="h3 mb-0">{{ client }} {% if not client.actif %}<span class="badge text-bg-secondary">Inactif</span>{% endif %}</h1>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if perms.clients.change_client %}
+      <a href="{% url 'clients:modifier' client.pk %}" class="btn btn-outline-primary">Modifier</a>
+      <form method="post" action="{% url 'clients:activation' client.pk %}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn {% if client.actif %}btn-outline-warning{% else %}btn-outline-success{% endif %}">{% if client.actif %}Désactiver{% else %}Réactiver{% endif %}</button>
+      </form>
+    {% endif %}
+    <a href="{% url 'clients:liste' %}" class="btn btn-outline-secondary">Retour à la liste</a>
+  </div>
+</div>
+
+<div class="card card-body mb-4">
+  <dl class="row mb-0">
+    <dt class="col-sm-3">Téléphone</dt><dd class="col-sm-9">{{ client.telephone|default:"—" }}</dd>
+    <dt class="col-sm-3">Adresse</dt><dd class="col-sm-9">{{ client.adresse|default:"—" }}</dd>
+    <dt class="col-sm-3">Client depuis</dt><dd class="col-sm-9">{{ client.date_creation|date:"d/m/Y" }}</dd>
+  </dl>
+</div>
+
+<h2 class="h5">Historique des ventes</h2>
+{% if perms.ventes.view_vente %}
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Vente</th><th>Date</th><th>Vendeur</th><th class="text-end">Total</th><th>Paiement</th><th>Statut</th></tr></thead>
+    <tbody>
+      {% for v in ventes %}
+      <tr>
+        <td><a href="{% url 'ventes:detail' v.pk %}">{{ v.numero }}</a></td>
+        <td>{{ v.date|date:"d/m/Y H:i" }}</td>
+        <td>{{ v.vendeur.username }}</td>
+        <td class="text-end">{{ v.total }}</td>
+        <td>{{ v.libelle_paiement }}</td>
+        <td>{{ v.get_statut_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-3">Aucune vente pour ce client.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted">Vous n'avez pas accès à l'historique des ventes.</p>
+{% endif %}
+{% endblock %}

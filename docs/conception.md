@@ -168,7 +168,7 @@ Clés primaires soulignées par `PK`, clés étrangères par `FK`.
 | `vente` | id PK, client_id FK (nullable), utilisateur_id FK, jeton (unique, anti double validation), date, statut ; le total est calculé depuis les lignes |
 | `ligne_vente` | id PK, vente_id FK, medicament_id FK, lot_id FK, quantite, prix_applique |
 | `paiement` | id PK, vente_id FK, mode, montant, statut |
-| `retour_vente` | id PK, ligne_vente_id FK, utilisateur_id FK, quantite, motif, remis_en_stock, date |
+| `retour_vente` | id PK, ligne_vente_id FK, utilisateur_id FK, quantite, motif, remis_en_stock, montant_rembourse, date |
 | `utilisateur` | table `auth_user` de Django + groupes (rôles) et permissions |
 | `journal_audit` | id PK, utilisateur_id FK, action, detail, date |
 
@@ -244,3 +244,17 @@ Le journal d'audit (RG09) enregistre : connexions et déconnexions, création / 
 **Stock disponible** : somme des quantités restantes des lots ni bloqués ni périmés (RG08). Rupture : disponible = 0. Stock faible : disponible strictement inférieur au seuil d'alerte. Un lot est « proche de la péremption » s'il expire dans `JOURS_ALERTE_PEREMPTION` jours (30 par défaut, réglable dans `.env`).
 
 **Inventaire physique** : on saisit les quantités comptées ; chaque écart met à jour le lot et crée un mouvement « correction » (ancienne et nouvelle quantité, motif, auteur). Une quantité négative, ou supérieure à la quantité reçue, est refusée et rien n'est appliqué.
+
+## 8. Ventes, caisse, paiements et retours (Sprint 6)
+
+**Caisse** : le panier est conservé dans la session. On recherche un médicament par nom ou code-barres (un code exact ajoute directement une unité). Le prix est celui du médicament (non modifiable à la caisse) ; le lot est choisi automatiquement selon la méthode FEFO (péremption la plus proche d'abord, sur plusieurs lots si besoin) ou manuellement parmi les lots vendables.
+
+**Validation d'une vente** (RG06, RG07, RG08, RG12) : une seule transaction qui crée la vente et ses lignes (une ligne par lot délivré, prix figé), enregistre un mouvement de sortie par lot et crée le paiement. La sortie de stock est un décrément conditionnel en base (`quantité restante ≥ quantité demandée`, lot non bloqué et non périmé) : deux validations simultanées ne peuvent pas rendre le stock négatif. Un jeton unique par panier empêche d'enregistrer deux fois la même vente.
+
+**Paiements** : les espèces sont confirmées immédiatement. Tout autre mode (mobile money, autre moyen) reste « en attente » jusqu'à ce qu'un utilisateur autorisé le confirme en saisissant la référence de la transaction vérifiée, ou le déclare échoué. Un paiement peut être ajouté plus tard (paiement partiel) dans la limite du reste à payer. Seuls les paiements confirmés comptent comme encaissés.
+
+**Retours et annulation** : une vente validée n'est jamais supprimée. Un retour (ligne, quantité, motif, auteur) calcule le remboursement au prix appliqué et ne remet le produit en stock que si son lot n'est ni périmé ni bloqué. L'annulation d'une vente est une opération compensatoire : tout ce qui n'a pas encore été retourné est retourné, les paiements en attente sont déclarés échoués, et la vente passe au statut « Annulée » en restant consultable.
+
+**Clients** : ajout, modification, activation / désactivation, historique des ventes ; une vente comptoir n'exige pas de client.
+
+**Droits** : la caisse est réservée aux rôles ayant la permission d'ajouter une vente (Caissier, Administrateur) ; les retours et annulations à ceux qui peuvent enregistrer un retour (Pharmacien responsable, Administrateur).

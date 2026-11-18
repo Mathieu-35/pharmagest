@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titre %}Annuler la vente {{ vente.numero }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Annuler la vente {{ vente.numero }}</h1>
+<div class="card card-body" style="max-width:640px">
+  <div class="alert alert-warning">
+    La vente ne sera pas supprimée : elle est annulée par une <strong>opération compensatoire</strong> (retour de tout ce qui n'a pas encore été retourné), tracée avec votre nom. Total de la vente : <strong>{{ vente.total }}</strong>.
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label" for="motif">Motif de l'annulation</label>
+      <input type="text" class="form-control" id="motif" name="motif" value="{{ motif }}" maxlength="200">
+    </div>
+    <div class="form-check mb-3">
+      <input type="checkbox" class="form-check-input" id="remettre" name="remettre" checked>
+      <label class="form-check-label" for="remettre">Remettre les produits en stock (seulement si leur lot est ni périmé ni bloqué)</label>
+    </div>
+    <button type="submit" class="btn btn-danger">Annuler la vente</button>
+    <a href="{% url 'ventes:detail' vente.pk %}" class="btn btn-outline-secondary">Retour</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">{{ titre }}</h1>
+<p class="text-muted">Ne saisissez que les informations strictement nécessaires.</p>
+<form method="post" class="card card-body" style="max-width:640px">
+  {% csrf_token %}
+  {% include "_formulaire.html" %}
+  <div>
+    <button type="submit" class="btn btn-success">Enregistrer</button>
+    <a href="{% if client %}{% url 'clients:detail' client.pk %}{% else %}{% url 'clients:liste' %}{% endif %}" class="btn btn-outline-secondary">Annuler</a>
+  </div>
+</form>
+{% endblock %}

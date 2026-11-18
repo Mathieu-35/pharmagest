@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block titre %}Caisse — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Caisse</h1>
+
+<div class="row g-3">
+  <!-- Recherche -->
+  <div class="col-12 col-lg-6">
+    <div class="card card-body mb-3">
+      <form method="post" action="{% url 'ventes:rechercher' %}">
+        {% csrf_token %}
+        <label class="form-label" for="q">Rechercher un médicament ou scanner un code-barres</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="q" name="q" value="{{ q }}" autofocus autocomplete="off">
+          <button type="submit" class="btn btn-success">Rechercher</button>
+        </div>
+        <div class="form-text">Un code-barres exact ajoute directement 1 unité au panier.</div>
+      </form>
+    </div>
+
+    {% if q %}
+      <h2 class="h6 text-muted">Résultats pour « {{ q }} »</h2>
+      {% for m in resultats %}
+      <div class="card card-body mb-2">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+          <div>
+            <div class="fw-semibold">{{ m.nom_commercial }} <span class="text-muted small">{{ m.dosage }}</span></div>
+            <div class="small text-muted">{{ m.code_barres|default:"sans code-barres" }} · Prix : <strong>{{ m.prix_vente }}</strong></div>
+          </div>
+          <div class="text-end">
+            {% if m.stock_disponible == 0 %}<span class="badge text-bg-danger">Rupture</span>
+            {% elif m.stock_disponible < m.seuil_alerte %}<span class="badge text-bg-warning">Stock faible : {{ m.stock_disponible }}</span>
+            {% else %}<span class="badge text-bg-success">Stock : {{ m.stock_disponible }}</span>{% endif %}
+          </div>
+        </div>
+        {% if m.stock_disponible > 0 %}
+        <form method="post" action="{% url 'ventes:panier_ajouter' %}" class="row g-2 mt-1 align-items-end">
+          {% csrf_token %}
+          <input type="hidden" name="medicament" value="{{ m.pk }}">
+          <div class="col-4 col-md-3">
+            <label class="form-label small mb-0">Quantité</label>
+            <input type="number" class="form-control" name="quantite" value="1" min="1" max="{{ m.stock_disponible }}">
+          </div>
+          <div class="col-8 col-md-6">
+            <label class="form-label small mb-0">Lot</label>
+            <select class="form-select" name="lot">
+              <option value="">Automatique (péremption la plus proche)</option>
+              {% for lot in m.lots_choix %}
+                <option value="{{ lot.pk }}">{{ lot.numero_lot }} — exp. {{ lot.date_peremption|date:"d/m/Y" }} — {{ lot.quantite_restante }} dispo</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-3 d-grid"><button type="submit" class="btn btn-outline-success">Ajouter</button></div>
+        </form>
+        {% endif %}
+      </div>
+      {% empty %}
+        <p class="text-muted">Aucun médicament actif trouvé.</p>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <!-- Panier -->
+  <div class="col-12 col-lg-6">
+    <div class="card card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">Panier</h2>
+        {% if lignes %}
+        <form method="post" action="{% url 'ventes:panier_vider' %}" class="m-0">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-secondary">Vider</button>
+        </form>
+        {% endif %}
+      </div>
+
+      {% if lignes %}
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead><tr><th>Médicament</th><th style="width:150px">Quantité</th><th class="text-end">Prix</th><th class="text-end">Sous-total</th><th></th></tr></thead>
+          <tbody>
+            {% for l in lignes %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ l.medicament.nom_commercial }} <span class="text-muted small">{{ l.medicament.dosage }}</span></div>
+                {% for lot, q in l.repartition %}
+                  <div class="small text-muted">{{ q }} × lot {{ lot.numero_lot }} (exp. {{ lot.date_peremption|date:"d/m/Y" }})</div>
+                {% endfor %}
+                {% if l.erreur %}<div class="small text-danger">{{ l.erreur }}</div>{% endif %}
+              </td>
+              <td>
+                <form method="post" action="{% url 'ventes:panier_modifier' l.index %}" class="input-group input-group-sm">
+                  {% csrf_token %}
+                  <input type="number" class="form-control" name="quantite" value="{{ l.quantite }}" min="1">
+                  <button type="submit" class="btn btn-outline-secondary">OK</button>
+                </form>
+              </td>
+              <td class="text-end">{{ l.prix }}</td>
+              <td class="text-end">{{ l.sous_total }}</td>
+              <td class="text-end">
+                <form method="post" action="{% url 'ventes:panier_retirer' l.index %}" class="m-0">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Retirer">×</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr><th colspan="3" class="text-end">Total</th><th class="text-end fs-5">{{ total }}</th><th></th></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <form method="post" action="{% url 'ventes:valider' %}">
+        {% csrf_token %}
+        <input type="hidden" name="jeton" value="{{ panier.jeton }}">
+        <div class="row g-2">
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="client">Client (facultatif)</label>
+            <select class="form-select" id="client" name="client">
+              <option value="">Vente comptoir (sans client)</option>
+              {% for c in clients %}<option value="{{ c.pk }}">{{ c.nom }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="mode">Mode de paiement</label>
+            <select class="form-select" id="mode" name="mode">
+              {% for valeur, libelle in modes %}<option value="{{ valeur }}">{{ libelle }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <p class="form-text">Un paiement par mobile money ou autre moyen électronique reste « en attente » jusqu'à vérification de son statut.</p>
+        <button type="submit" class="btn btn-success btn-lg w-100" {% if not valide %}disabled{% endif %}>Confirmer la vente</button>
+      </form>
+      {% else %}
+        <p class="text-muted mb-0">Le panier est vide. Recherchez un médicament ou scannez un code-barres.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

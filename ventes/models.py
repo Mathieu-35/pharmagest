@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Sum
 
 
 class Vente(models.Model):
@@ -59,10 +59,46 @@ class Vente(models.Model):
             Decimal("0"),
         )
 
+    @property
+    def total_en_attente(self):
+        return sum(
+            (p.montant for p in self.paiements.all() if p.statut == Paiement.Statut.EN_ATTENTE),
+            Decimal("0"),
+        )
+
+    @property
+    def reste_a_payer(self):
+        """Part du total ni encaissée ni en attente de confirmation."""
+        return max(self.total - self.total_paye - self.total_en_attente, Decimal("0"))
+
+    @property
+    def total_rembourse(self):
+        return RetourVente.objects.filter(ligne_vente__vente=self).aggregate(
+            t=Sum("montant_rembourse"))["t"] or Decimal("0")
+
+    @property
+    def libelle_paiement(self):
+        if self.total_paye >= self.total:
+            return "Payée"
+        if self.total_en_attente > 0:
+            return "Paiement en attente"
+        if self.total_paye > 0:
+            return "Partiellement payée"
+        return "Non payée"
+
+    @property
+    def est_annulable(self):
+        return self.statut == self.Statut.VALIDEE
+
+    @property
+    def est_entierement_retournee(self):
+        return all(l.quantite_retournable == 0 for l in self.lignes.all())
+
 
 class LigneVente(models.Model):
+    # PROTECT : une vente validée n'est jamais supprimée silencieusement (RG10)
     vente = models.ForeignKey(
-        Vente, verbose_name="vente", on_delete=models.CASCADE, related_name="lignes"
+        Vente, verbose_name="vente", on_delete=models.PROTECT, related_name="lignes"
     )
     medicament = models.ForeignKey(
         "medicaments.Medicament",
@@ -107,6 +143,14 @@ class LigneVente(models.Model):
     @property
     def sous_total(self):
         return self.quantite * self.prix_applique
+
+    @property
+    def quantite_retournee(self):
+        return self.retours.aggregate(t=Sum("quantite"))["t"] or 0
+
+    @property
+    def quantite_retournable(self):
+        return self.quantite - self.quantite_retournee
 
 
 class Paiement(models.Model):
@@ -159,6 +203,10 @@ class RetourVente(models.Model):
     quantite = models.PositiveIntegerField("quantité retournée", validators=[MinValueValidator(1)])
     motif = models.CharField("motif du retour", max_length=255)
     remis_en_stock = models.BooleanField("remis en stock", default=False)
+    montant_rembourse = models.DecimalField(
+        "montant remboursé", max_digits=12, decimal_places=2, default=0,
+        validators=[MinValueValidator(0)],
+    )
     enregistre_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="enregistré par",

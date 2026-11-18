@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titre %}Retour — vente {{ vente.numero }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-1">Retour sur la vente {{ vente.numero }}</h1>
+<p class="text-muted">La vente d'origine est conservée. Le remboursement est calculé au prix appliqué lors de la vente. Un produit n'est remis en stock que si son lot n'est ni périmé ni bloqué.</p>
+
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Médicament</th><th>Lot</th><th class="text-end">Vendu</th><th class="text-end">Déjà retourné</th><th style="width:130px">Quantité retournée</th><th>Remettre en stock</th></tr></thead>
+      <tbody>
+        {% for c in lignes %}
+        <tr>
+          <td>{{ c.ligne.medicament }}</td>
+          <td>{{ c.ligne.lot.numero_lot }}</td>
+          <td class="text-end">{{ c.ligne.quantite }}</td>
+          <td class="text-end">{{ c.ligne.quantite_retournee }}</td>
+          <td><input type="number" class="form-control" name="quantite_{{ c.ligne.pk }}" min="0" max="{{ c.ligne.quantite_retournable }}" value="{{ c.saisie.quantite|default:0 }}"></td>
+          <td>
+            {% if c.eligible %}
+              <div class="form-check"><input type="checkbox" class="form-check-input" name="remettre_{{ c.ligne.pk }}" id="r{{ c.ligne.pk }}" {% if c.saisie.remettre %}checked{% endif %}>
+              <label class="form-check-label" for="r{{ c.ligne.pk }}">Oui</label></div>
+            {% else %}<span class="text-muted small">Interdit (lot périmé ou bloqué)</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="mb-3" style="max-width:520px">
+    <label class="form-label" for="motif">Motif du retour</label>
+    <input type="text" class="form-control" id="motif" name="motif" value="{{ motif }}" maxlength="255">
+  </div>
+  <div>
+    <button type="submit" class="btn btn-primary">Enregistrer le retour</button>
+    <a href="{% url 'ventes:detail' vente.pk %}" class="btn btn-outline-secondary">Annuler</a>
+  </div>
+</form>
+{% endblock %}

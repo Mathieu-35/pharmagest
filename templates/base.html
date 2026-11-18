@@ -49,6 +49,18 @@
               </ul>
             </li>
           {% endif %}
+          {% if perms.ventes.add_vente or perms.ventes.view_vente %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Ventes</a>
+              <ul class="dropdown-menu">
+                {% if perms.ventes.add_vente %}<li><a class="dropdown-item" href="{% url 'ventes:caisse' %}">Caisse</a></li>{% endif %}
+                {% if perms.ventes.view_vente %}<li><a class="dropdown-item" href="{% url 'ventes:liste' %}">Historique des ventes</a></li>{% endif %}
+              </ul>
+            </li>
+          {% endif %}
+          {% if perms.clients.view_client %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'clients:liste' %}">Clients</a></li>
+          {% endif %}
           {% if perms.auth.view_user %}
             <li class="nav-item"><a class="nav-link" href="{% url 'utilisateurs:liste' %}">Utilisateurs</a></li>
           {% endif %}

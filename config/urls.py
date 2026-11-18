@@ -12,6 +12,8 @@ urlpatterns = [
     path("fournisseurs/", include("fournisseurs.urls")),
     path("achats/", include("achats.urls")),
     path("stock/", include("stock.urls")),
+    path("ventes/", include("ventes.urls")),
+    path("clients/", include("clients.urls")),
     path("", login_required(TemplateView.as_view(template_name="accueil.html")), name="accueil"),
 ]
 

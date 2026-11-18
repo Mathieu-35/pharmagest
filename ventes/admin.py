@@ -21,6 +21,9 @@ class VenteAdmin(admin.ModelAdmin):
     readonly_fields = ("date", "jeton")
     inlines = [LigneVenteInline, PaiementInline]
 
+    def has_delete_permission(self, request, obj=None):
+        return False  # une vente validée ne se supprime pas (RG10) : on l'annule
+
 
 @admin.register(Paiement)
 class PaiementAdmin(admin.ModelAdmin):
