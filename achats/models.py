@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Sum
 
 
 class CommandeAchat(models.Model):
@@ -50,6 +50,24 @@ class CommandeAchat(models.Model):
         """Calculé à partir des lignes (jamais saisi à la main)."""
         return sum((l.sous_total for l in self.lignes.all()), Decimal("0"))
 
+    @property
+    def montant_receptionne(self):
+        """Valeur des marchandises effectivement reçues, au prix de la commande."""
+        return sum((r.montant for r in self.receptions.all()), Decimal("0"))
+
+    @property
+    def est_modifiable(self):
+        return self.statut == self.Statut.BROUILLON
+
+    @property
+    def est_receptionnable(self):
+        return self.statut in (self.Statut.COMMANDEE, self.Statut.PARTIELLE)
+
+    @property
+    def est_annulable(self):
+        """Une commande déjà (même partiellement) réceptionnée ne s'annule plus."""
+        return self.statut in (self.Statut.BROUILLON, self.Statut.COMMANDEE)
+
 
 class LigneAchat(models.Model):
     commande = models.ForeignKey(
@@ -94,6 +112,14 @@ class LigneAchat(models.Model):
     def sous_total(self):
         return self.quantite * self.prix_achat
 
+    @property
+    def quantite_recue(self):
+        return self.lignes_reception.aggregate(total=Sum("quantite"))["total"] or 0
+
+    @property
+    def quantite_a_recevoir(self):
+        return self.quantite - self.quantite_recue
+
 
 class ReceptionAchat(models.Model):
     """Réception effective de marchandises (totale ou partielle)."""
@@ -104,6 +130,9 @@ class ReceptionAchat(models.Model):
         on_delete=models.PROTECT,
         related_name="receptions",
     )
+    # Jeton unique généré à l'ouverture du formulaire : une réception ne peut être
+    # enregistrée qu'une fois, même si le formulaire est envoyé deux fois (RG05)
+    jeton = models.UUIDField("jeton anti-doublon", unique=True, null=True, editable=False)
     recue_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="reçue par",
@@ -119,6 +148,10 @@ class ReceptionAchat(models.Model):
 
     def __str__(self):
         return f"BR-{self.pk:06d}" if self.pk else "BR-nouveau"
+
+    @property
+    def montant(self):
+        return sum((l.quantite * l.ligne_achat.prix_achat for l in self.lignes.all()), Decimal("0"))
 
 
 class LigneReception(models.Model):

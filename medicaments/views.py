@@ -1,10 +1,9 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Count, Q, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 
+from stock.queries import avec_stock
 from utilisateurs import audit
 from utilisateurs.decorators import permission_requise
 
@@ -44,17 +43,7 @@ def _paginer(request, queryset):
 
 @permission_requise("medicaments.view_medicament")
 def liste_medicaments(request):
-    aujourdhui = timezone.localdate()
-    medicaments = Medicament.objects.select_related("categorie").annotate(
-        # Stock disponible : lots non bloqués et non périmés (RG08)
-        stock_disponible=Coalesce(
-            Sum(
-                "lots__quantite_restante",
-                filter=Q(lots__bloque=False, lots__date_peremption__gte=aujourdhui),
-            ),
-            0,
-        )
-    )
+    medicaments = avec_stock(Medicament.objects.select_related("categorie"))
 
     q = request.GET.get("q", "").strip()
     if q:

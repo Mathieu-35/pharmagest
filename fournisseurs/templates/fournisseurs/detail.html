@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titre %}{{ fournisseur }} — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="h3 mb-0">{{ fournisseur }}
+    {% if not fournisseur.actif %}<span class="badge text-bg-secondary">Inactif</span>{% endif %}
+  </h1>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if perms.fournisseurs.change_fournisseur %}
+      <a href="{% url 'fournisseurs:modifier' fournisseur.pk %}" class="btn btn-outline-primary">Modifier</a>
+      <form method="post" action="{% url 'fournisseurs:activation' fournisseur.pk %}" class="m-0">
+        {% csrf_token %}
+        <button type="submit" class="btn {% if fournisseur.actif %}btn-outline-warning{% else %}btn-outline-success{% endif %}">
+          {% if fournisseur.actif %}Désactiver{% else %}Réactiver{% endif %}
+        </button>
+      </form>
+    {% endif %}
+    {% if perms.fournisseurs.delete_fournisseur %}
+      <a href="{% url 'fournisseurs:supprimer' fournisseur.pk %}" class="btn btn-outline-danger">Supprimer</a>
+    {% endif %}
+    <a href="{% url 'fournisseurs:liste' %}" class="btn btn-outline-secondary">Retour à la liste</a>
+  </div>
+</div>
+
+<div class="card card-body mb-4">
+  <dl class="row mb-0">
+    <dt class="col-sm-3">Adresse</dt><dd class="col-sm-9">{{ fournisseur.adresse|default:"—" }}</dd>
+    <dt class="col-sm-3">Téléphone</dt><dd class="col-sm-9">{{ fournisseur.telephone|default:"—" }}</dd>
+    <dt class="col-sm-3">E-mail</dt><dd class="col-sm-9">{{ fournisseur.email|default:"—" }}</dd>
+    <dt class="col-sm-3">Numéro fiscal</dt><dd class="col-sm-9">{{ fournisseur.numero_fiscal|default:"—" }}</dd>
+    <dt class="col-sm-3">Contact principal</dt><dd class="col-sm-9">{{ fournisseur.contact_principal|default:"—" }}</dd>
+  </dl>
+</div>
+
+<h2 class="h5">Historique des achats</h2>
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Commande</th><th>Date</th><th>Statut</th><th class="text-end">Montant commandé</th><th class="text-end">Montant réceptionné</th></tr></thead>
+    <tbody>
+      {% for c in commandes %}
+      <tr>
+        <td>{% if perms.achats.view_commandeachat %}<a href="{% url 'achats:detail' c.pk %}">{{ c.numero }}</a>{% else %}{{ c.numero }}{% endif %}</td>
+        <td>{{ c.date_commande|date:"d/m/Y" }}</td>
+        <td>{{ c.get_statut_display }}</td>
+        <td class="text-end">{{ c.montant_total }}</td>
+        <td class="text-end">{{ c.montant_receptionne }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center text-muted py-3">Aucun achat enregistré.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

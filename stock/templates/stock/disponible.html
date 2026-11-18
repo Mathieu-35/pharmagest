@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titre %}Stock disponible — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Stock disponible</h1>
+
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-5">
+      <label class="form-label" for="q">Recherche (nom ou code-barres)</label>
+      <input type="search" class="form-control" id="q" name="q" value="{{ q }}">
+    </div>
+    <div class="col-8 col-md-4">
+      <label class="form-label" for="etat">Afficher</label>
+      <select class="form-select" id="etat" name="etat">
+        <option value="" {% if not etat %}selected{% endif %}>Tous les médicaments actifs</option>
+        <option value="rupture" {% if etat == "rupture" %}selected{% endif %}>Ruptures de stock</option>
+        <option value="faible" {% if etat == "faible" %}selected{% endif %}>Sous le seuil d'alerte</option>
+      </select>
+    </div>
+    <div class="col-4 col-md-2 d-grid"><button type="submit" class="btn btn-outline-success">Filtrer</button></div>
+  </div>
+</form>
+
+<p class="text-muted small">Le stock disponible ne compte que les lots non périmés et non bloqués.</p>
+
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead><tr><th>Médicament</th><th>Catégorie</th><th class="text-end">Disponible</th><th class="text-end">Seuil d'alerte</th><th class="text-end">Bloqué ou périmé</th><th>État</th></tr></thead>
+    <tbody>
+      {% for m in page %}
+      <tr>
+        <td><a href="{% url 'medicaments:detail' m.pk %}" class="fw-semibold text-decoration-none">{{ m.nom_commercial }}</a> <span class="text-muted small">{{ m.dosage }}</span></td>
+        <td>{{ m.categorie.nom }}</td>
+        <td class="text-end">{{ m.stock_disponible }}</td>
+        <td class="text-end">{{ m.seuil_alerte }}</td>
+        <td class="text-end">{{ m.stock_non_vendable }}</td>
+        <td>
+          {% if m.stock_disponible == 0 %}<span class="badge text-bg-danger">Rupture</span>
+          {% elif m.stock_disponible < m.seuil_alerte %}<span class="badge text-bg-warning">Stock faible</span>
+          {% else %}<span class="badge text-bg-success">Normal</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">Aucun médicament trouvé.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="mt-3">{% include "_pagination.html" %}</div>
+{% endblock %}

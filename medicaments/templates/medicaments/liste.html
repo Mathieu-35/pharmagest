@@ -72,7 +72,7 @@
         <td class="text-end">
           {% if m.stock_disponible == 0 %}
             <span class="badge text-bg-danger">Rupture</span>
-          {% elif m.stock_disponible <= m.seuil_alerte %}
+          {% elif m.stock_disponible < m.seuil_alerte %}
             <span class="badge text-bg-warning">{{ m.stock_disponible }}</span>
           {% else %}
             {{ m.stock_disponible }}

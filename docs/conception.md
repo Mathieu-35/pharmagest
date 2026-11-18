@@ -161,7 +161,7 @@ Clés primaires soulignées par `PK`, clés étrangères par `FK`.
 | `client` | id PK, nom, telephone, actif |
 | `commande_achat` | id PK, fournisseur_id FK, utilisateur_id FK, statut, date_commande ; le montant total est calculé depuis les lignes |
 | `ligne_achat` | id PK, commande_id FK, medicament_id FK, quantite, prix_achat |
-| `reception_achat` | id PK, commande_id FK, utilisateur_id FK, date_reception |
+| `reception_achat` | id PK, commande_id FK, utilisateur_id FK, jeton (unique, anti double réception), date_reception |
 | `ligne_reception` | id PK, reception_id FK, ligne_achat_id FK, lot_id FK, quantite |
 | `lot_stock` | id PK, medicament_id FK, numero_lot, date_peremption, quantite_recue, quantite_restante, bloque (unique : medicament + numero_lot) |
 | `mouvement_stock` | id PK, lot_id FK, utilisateur_id FK, type (entrée, sortie, retour, correction), quantite, date, motif |
@@ -234,3 +234,13 @@ Les rôles de la section 3 du cahier des charges sont des groupes Django, créé
 Chaque vue vérifie la permission correspondante (RG11) : visiteur non connecté → page de connexion ; utilisateur connecté sans permission → page « Accès interdit » (403).
 
 Le journal d'audit (RG09) enregistre : connexions et déconnexions, création / modification / activation / désactivation des comptes, changements de mot de passe, ajout / modification / archivage / suppression des médicaments et des catégories.
+
+## 7. Achats et stock (Sprint 5)
+
+**Cycle d'une commande** : Brouillon → Commandée → Partiellement réceptionnée → Entièrement réceptionnée ; une commande Brouillon ou Commandée peut être Annulée. Seul un brouillon est modifiable. Une commande ne modifie jamais le stock (RG04).
+
+**Réception** (RG05) : transaction unique qui crée la réception et ses lignes, crée le lot (ou ajoute au lot existant de même numéro et de même péremption), enregistre un mouvement d'entrée par ligne et met à jour le statut. Un jeton unique généré à l'ouverture du formulaire empêche d'enregistrer deux fois la même réception. Une réception ne peut pas dépasser la quantité restant à recevoir, et un lot déjà périmé est refusé.
+
+**Stock disponible** : somme des quantités restantes des lots ni bloqués ni périmés (RG08). Rupture : disponible = 0. Stock faible : disponible strictement inférieur au seuil d'alerte. Un lot est « proche de la péremption » s'il expire dans `JOURS_ALERTE_PEREMPTION` jours (30 par défaut, réglable dans `.env`).
+
+**Inventaire physique** : on saisit les quantités comptées ; chaque écart met à jour le lot et crée un mouvement « correction » (ancienne et nouvelle quantité, motif, auteur). Une quantité négative, ou supérieure à la quantité reçue, est refusée et rien n'est appliqué.

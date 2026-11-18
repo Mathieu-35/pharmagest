@@ -103,6 +103,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Nombre de jours avant la péremption à partir duquel un lot est signalé « proche de la péremption »
+JOURS_ALERTE_PEREMPTION = int(os.environ.get("JOURS_ALERTE_PEREMPTION", "30"))
+
 # Authentification
 LOGIN_URL = "utilisateurs:connexion"
 LOGIN_REDIRECT_URL = "accueil"

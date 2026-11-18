@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block titre %}{{ commande.numero }} — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="h3 mb-0">Commande {{ commande.numero }} <span class="badge text-bg-secondary fs-6">{{ commande.get_statut_display }}</span></h1>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if commande.est_modifiable and perms.achats.change_commandeachat %}
+      <a href="{% url 'achats:modifier' commande.pk %}" class="btn btn-outline-primary">Modifier</a>
+      <a href="{% url 'achats:valider' commande.pk %}" class="btn btn-success">Valider la commande</a>
+    {% endif %}
+    {% if commande.est_receptionnable and perms.achats.add_receptionachat %}
+      <a href="{% url 'achats:reception' commande.pk %}" class="btn btn-success">Réceptionner</a>
+    {% endif %}
+    {% if commande.est_annulable and perms.achats.change_commandeachat %}
+      <a href="{% url 'achats:annuler' commande.pk %}" class="btn btn-outline-danger">Annuler</a>
+    {% endif %}
+    <a href="{% url 'achats:liste' %}" class="btn btn-outline-secondary">Retour à la liste</a>
+  </div>
+</div>
+
+<div class="card card-body mb-4">
+  <dl class="row mb-0">
+    <dt class="col-sm-3">Fournisseur</dt>
+    <dd class="col-sm-9">{% if perms.fournisseurs.view_fournisseur %}<a href="{% url 'fournisseurs:detail' commande.fournisseur.pk %}">{{ commande.fournisseur }}</a>{% else %}{{ commande.fournisseur }}{% endif %}</dd>
+    <dt class="col-sm-3">Créée le</dt><dd class="col-sm-9">{{ commande.date_commande|date:"d/m/Y H:i" }} par {{ commande.cree_par.username }}</dd>
+    <dt class="col-sm-3">Montant total</dt><dd class="col-sm-9 fw-semibold">{{ commande.montant_total }}</dd>
+    <dt class="col-sm-3">Montant réceptionné</dt><dd class="col-sm-9">{{ commande.montant_receptionne }}</dd>
+  </dl>
+</div>
+
+<h2 class="h5">Lignes de la commande</h2>
+<div class="table-responsive bg-white rounded shadow-sm mb-4">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Médicament</th><th class="text-end">Commandé</th><th class="text-end">Reçu</th><th class="text-end">Reste</th><th class="text-end">Prix unitaire</th><th class="text-end">Sous-total</th></tr></thead>
+    <tbody>
+      {% for l in lignes %}
+      <tr>
+        <td>{{ l.medicament }}</td>
+        <td class="text-end">{{ l.quantite }}</td>
+        <td class="text-end">{{ l.quantite_recue }}</td>
+        <td class="text-end">{{ l.quantite_a_recevoir }}</td>
+        <td class="text-end">{{ l.prix_achat }}</td>
+        <td class="text-end">{{ l.sous_total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="h5">Réceptions</h2>
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Réception</th><th>Date</th><th>Reçue par</th><th>Détail</th><th class="text-end">Montant</th></tr></thead>
+    <tbody>
+      {% for r in receptions %}
+      <tr>
+        <td>{{ r }}</td>
+        <td>{{ r.date_reception|date:"d/m/Y H:i" }}</td>
+        <td>{{ r.recue_par.username }}</td>
+        <td>{% for lr in r.lignes.all %}{{ lr.quantite }} × {{ lr.ligne_achat.medicament }} (lot {{ lr.lot.numero_lot }}, péremption {{ lr.lot.date_peremption|date:"d/m/Y" }})<br>{% endfor %}</td>
+        <td class="text-end">{{ r.montant }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center text-muted py-3">Aucune réception pour le moment.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

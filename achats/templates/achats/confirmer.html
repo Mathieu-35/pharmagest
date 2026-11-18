@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">{{ titre }} {{ commande.numero }}</h1>
+<div class="card card-body">
+  <p>{{ message }}</p>
+  <p class="mb-3">Fournisseur : <strong>{{ commande.fournisseur }}</strong> — Montant : <strong>{{ commande.montant_total }}</strong></p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn {{ classe }}">{{ bouton }}</button>
+    <a href="{% url 'achats:detail' commande.pk %}" class="btn btn-outline-secondary">Retour</a>
+  </form>
+</div>
+{% endblock %}

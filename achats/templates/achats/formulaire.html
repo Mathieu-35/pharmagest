@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}{{ titre }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">{{ titre }}</h1>
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  {% include "_formulaire.html" %}
+
+  <h2 class="h5 mt-2">Médicaments commandés</h2>
+  {{ formset.management_form }}
+  {% if formset.non_form_errors %}<div class="alert alert-danger">{{ formset.non_form_errors }}</div>{% endif %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Médicament</th><th style="width:140px">Quantité</th><th style="width:180px">Prix d'achat unitaire</th>{% if commande %}<th>Retirer</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for f in formset %}
+        <tr>
+          <td>{% for h in f.hidden_fields %}{{ h }}{% endfor %}{{ f.medicament }}
+            {% for e in f.medicament.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            {% for e in f.non_field_errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+          <td>{{ f.quantite }}{% for e in f.quantite.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+          <td>{{ f.prix_achat }}{% for e in f.prix_achat.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+          {% if commande %}<td>{% if f.instance.pk %}<label class="form-check-label">{{ f.DELETE }} Retirer</label>{% endif %}</td>{% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-muted small">Les lignes laissées vides sont ignorées. Le montant total est calculé automatiquement.</p>
+
+  <div>
+    <button type="submit" class="btn btn-success">Enregistrer en brouillon</button>
+    <a href="{% if commande %}{% url 'achats:detail' commande.pk %}{% else %}{% url 'achats:liste' %}{% endif %}" class="btn btn-outline-secondary">Annuler</a>
+  </div>
+</form>
+{% endblock %}

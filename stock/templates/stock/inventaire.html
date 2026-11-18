@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titre %}Inventaire physique — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-1">Inventaire physique</h1>
+<p class="text-muted">Comptez chaque lot en rayon et saisissez la quantité réellement trouvée. Seuls les écarts sont corrigés ; chaque correction est enregistrée dans l'historique des mouvements.</p>
+
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  <div class="mb-3" style="max-width:420px">
+    <label class="form-label" for="motif">Motif de l'inventaire</label>
+    <input type="text" class="form-control" id="motif" name="motif" value="{{ motif }}" maxlength="150">
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Médicament</th><th>N° de lot</th><th>Péremption</th><th class="text-end">Quantité en système</th><th style="width:170px">Quantité comptée</th></tr></thead>
+      <tbody>
+        {% for l in lignes %}
+        <tr>
+          <td>{{ l.lot.medicament }}</td>
+          <td>{{ l.lot.numero_lot }}</td>
+          <td>{{ l.lot.date_peremption|date:"d/m/Y" }}</td>
+          <td class="text-end">{{ l.lot.quantite_restante }}</td>
+          <td>
+            <input type="number" min="0" max="{{ l.lot.quantite_recue }}" class="form-control" name="compte_{{ l.lot.pk }}" value="{{ l.valeur }}">
+            {% if l.erreur %}<div class="text-danger small">{{ l.erreur }}</div>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-3">Aucun lot en stock.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <button type="submit" class="btn btn-success">Enregistrer l'inventaire</button>
+    <a href="{% url 'stock:disponible' %}" class="btn btn-outline-secondary">Annuler</a>
+  </div>
+</form>
+{% endblock %}

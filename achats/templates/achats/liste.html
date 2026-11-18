@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titre %}Commandes d'achat — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Commandes d'achat</h1>
+  {% if perms.achats.add_commandeachat %}
+    <a href="{% url 'achats:creer' %}" class="btn btn-success">Nouvelle commande</a>
+  {% endif %}
+</div>
+
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-5">
+      <label class="form-label" for="q">Fournisseur</label>
+      <input type="search" class="form-control" id="q" name="q" value="{{ q }}">
+    </div>
+    <div class="col-8 col-md-4">
+      <label class="form-label" for="statut">Statut</label>
+      <select class="form-select" id="statut" name="statut">
+        <option value="">Tous</option>
+        {% for valeur, libelle in statuts %}
+          <option value="{{ valeur }}" {% if statut == valeur %}selected{% endif %}>{{ libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-4 col-md-2 d-grid"><button type="submit" class="btn btn-outline-success">Filtrer</button></div>
+  </div>
+</form>
+
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead><tr><th>N°</th><th>Date</th><th>Fournisseur</th><th>Statut</th><th class="text-end">Montant</th><th>Créée par</th></tr></thead>
+    <tbody>
+      {% for c in page %}
+      <tr>
+        <td><a href="{% url 'achats:detail' c.pk %}" class="fw-semibold text-decoration-none">{{ c.numero }}</a></td>
+        <td>{{ c.date_commande|date:"d/m/Y" }}</td>
+        <td>{{ c.fournisseur.nom }}</td>
+        <td>
+          {% if c.statut == "brouillon" %}<span class="badge text-bg-secondary">{{ c.get_statut_display }}</span>
+          {% elif c.statut == "commandee" %}<span class="badge text-bg-primary">{{ c.get_statut_display }}</span>
+          {% elif c.statut == "partielle" %}<span class="badge text-bg-warning">{{ c.get_statut_display }}</span>
+          {% elif c.statut == "receptionnee" %}<span class="badge text-bg-success">{{ c.get_statut_display }}</span>
+          {% else %}<span class="badge text-bg-danger">{{ c.get_statut_display }}</span>{% endif %}
+        </td>
+        <td class="text-end">{{ c.montant_total }}</td>
+        <td>{{ c.cree_par.username }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">Aucune commande trouvée.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="mt-3">{% include "_pagination.html" %}</div>
+{% endblock %}

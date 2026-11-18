@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titre %}Réception {{ commande.numero }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-1">Réceptionner la commande {{ commande.numero }}</h1>
+<p class="text-muted">Fournisseur : {{ commande.fournisseur }}. Indiquez ce qui a réellement été reçu : le stock n'augmente qu'à la validation de cette réception. Laissez la quantité à 0 pour une ligne non reçue.</p>
+
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  <input type="hidden" name="jeton" value="{{ jeton }}">
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Médicament</th><th class="text-end">Reste à recevoir</th><th style="width:130px">Quantité reçue</th><th style="width:170px">N° de lot</th><th style="width:190px">Date de péremption</th></tr></thead>
+      <tbody>
+        {% for c in champs %}
+        <tr>
+          <td>{{ c.ligne.medicament }}</td>
+          <td class="text-end">{{ c.ligne.quantite_a_recevoir }}</td>
+          <td>{{ c.quantite }}{% for e in c.quantite.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+          <td>{{ c.lot }}{% for e in c.lot.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+          <td>{{ c.peremption }}{% for e in c.peremption.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <button type="submit" class="btn btn-success">Valider la réception</button>
+    <a href="{% url 'achats:detail' commande.pk %}" class="btn btn-outline-secondary">Annuler</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block titre %}Mouvements de stock — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Historique des mouvements de stock</h1>
+
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-5">
+      <label class="form-label" for="q">Recherche (médicament, lot, motif)</label>
+      <input type="search" class="form-control" id="q" name="q" value="{{ q }}">
+    </div>
+    <div class="col-8 col-md-4">
+      <label class="form-label" for="type">Type</label>
+      <select class="form-select" id="type" name="type">
+        <option value="">Tous</option>
+        {% for valeur, libelle in types %}
+          <option value="{{ valeur }}" {% if type == valeur %}selected{% endif %}>{{ libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-4 col-md-2 d-grid"><button type="submit" class="btn btn-outline-success">Filtrer</button></div>
+  </div>
+</form>
+
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Date</th><th>Médicament</th><th>Lot</th><th>Type</th><th class="text-end">Quantité</th><th>Motif</th><th>Utilisateur</th></tr></thead>
+    <tbody>
+      {% for m in page %}
+      <tr>
+        <td class="text-nowrap">{{ m.date|date:"d/m/Y H:i" }}</td>
+        <td>{{ m.lot.medicament }}</td>
+        <td>{{ m.lot.numero_lot }}</td>
+        <td>
+          {% if m.type == "entree" %}<span class="badge text-bg-success">{{ m.get_type_display }}</span>
+          {% elif m.type == "sortie" %}<span class="badge text-bg-primary">{{ m.get_type_display }}</span>
+          {% elif m.type == "retour" %}<span class="badge text-bg-info">{{ m.get_type_display }}</span>
+          {% else %}<span class="badge text-bg-warning">{{ m.get_type_display }}</span>{% endif %}
+        </td>
+        <td class="text-end">{{ m.quantite }}</td>
+        <td>{{ m.motif|default:"—" }}</td>
+        <td>{{ m.utilisateur.username|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-4">Aucun mouvement enregistré.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="mt-3">{% include "_pagination.html" %}</div>
+{% endblock %}

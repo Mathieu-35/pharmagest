@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titre %}Supprimer {{ fournisseur }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Supprimer « {{ fournisseur }} »</h1>
+<div class="card card-body">
+  {% if a_historique %}
+    <div class="alert alert-warning">
+      Ce fournisseur a des commandes : il ne peut pas être supprimé. Désactivez-le plutôt, son historique sera conservé.
+    </div>
+    <div><a href="{% url 'fournisseurs:detail' fournisseur.pk %}" class="btn btn-outline-secondary">Retour</a></div>
+  {% else %}
+    <div class="alert alert-danger">Ce fournisseur n'a aucune commande. Il sera <strong>supprimé définitivement</strong>.</div>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Supprimer</button>
+      <a href="{% url 'fournisseurs:detail' fournisseur.pk %}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

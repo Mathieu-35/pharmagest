@@ -25,6 +25,30 @@
           {% if perms.medicaments.view_categorie %}
             <li class="nav-item"><a class="nav-link" href="{% url 'medicaments:categories' %}">Catégories</a></li>
           {% endif %}
+          {% if perms.fournisseurs.view_fournisseur %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'fournisseurs:liste' %}">Fournisseurs</a></li>
+          {% endif %}
+          {% if perms.achats.view_commandeachat %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'achats:liste' %}">Achats</a></li>
+          {% endif %}
+          {% if perms.stock.view_lotstock or perms.stock.view_mouvementstock %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Stock</a>
+              <ul class="dropdown-menu">
+                {% if perms.stock.view_lotstock %}
+                  <li><a class="dropdown-item" href="{% url 'stock:disponible' %}">Stock disponible</a></li>
+                  <li><a class="dropdown-item" href="{% url 'stock:lots' %}">Lots et péremptions</a></li>
+                {% endif %}
+                {% if perms.stock.view_mouvementstock %}
+                  <li><a class="dropdown-item" href="{% url 'stock:mouvements' %}">Mouvements</a></li>
+                {% endif %}
+                {% if perms.stock.add_mouvementstock and perms.stock.change_lotstock %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'stock:inventaire' %}">Inventaire physique</a></li>
+                {% endif %}
+              </ul>
+            </li>
+          {% endif %}
           {% if perms.auth.view_user %}
             <li class="nav-item"><a class="nav-link" href="{% url 'utilisateurs:liste' %}">Utilisateurs</a></li>
           {% endif %}

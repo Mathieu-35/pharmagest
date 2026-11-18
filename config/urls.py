@@ -9,6 +9,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("medicaments/", include("medicaments.urls")),
     path("utilisateurs/", include("utilisateurs.urls")),
+    path("fournisseurs/", include("fournisseurs.urls")),
+    path("achats/", include("achats.urls")),
+    path("stock/", include("stock.urls")),
     path("", login_required(TemplateView.as_view(template_name="accueil.html")), name="accueil"),
 ]
 
