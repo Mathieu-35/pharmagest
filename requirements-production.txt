@@ -1,0 +1,5 @@
+# Dépendances supplémentaires pour la production (en plus de requirements.txt)
+# Pilote PostgreSQL
+psycopg[binary]
+# Serveur d'application (Linux)
+gunicorn

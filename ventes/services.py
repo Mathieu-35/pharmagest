@@ -13,6 +13,7 @@ from django.db import IntegrityError, OperationalError, transaction
 from django.db.models import F, Sum
 from django.utils import timezone
 
+from config.concurrence import reessayer_si_conflit
 from medicaments.models import Medicament
 from stock.models import LotStock, MouvementStock
 from utilisateurs import audit
@@ -85,7 +86,8 @@ def valider_vente(utilisateur, lignes, mode, jeton, client=None):
     """Valide une vente. `lignes` : [{medicament_id, quantite, lot_id}].
     Retourne (vente, creee). Rejouer le même jeton ne refait aucune sortie de stock."""
     try:
-        return _valider_vente(utilisateur, lignes, mode, jeton, client), True
+        return reessayer_si_conflit(
+            lambda: _valider_vente(utilisateur, lignes, mode, jeton, client)), True
     except _DejaValidee as deja:
         return deja.vente, False
     except (IntegrityError, OperationalError) as erreur:

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titre %}Page introuvable — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="p-5 bg-white rounded shadow-sm text-center">
+  <h1 class="display-6">Page introuvable</h1>
+  <p class="lead">La page demandée n'existe pas ou a été déplacée.</p>
+  <a href="{% url 'accueil' %}" class="btn btn-success">Retour à l'accueil</a>
+</div>
+{% endblock %}

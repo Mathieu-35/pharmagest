@@ -6,6 +6,7 @@ une seule fois (RG05), dans une transaction, avec un mouvement de stock traçabl
 
 from django.db import IntegrityError, OperationalError, transaction
 
+from config.concurrence import reessayer_si_conflit
 from stock.models import LotStock, MouvementStock
 from utilisateurs import audit
 
@@ -52,7 +53,8 @@ def receptionner(commande_id, utilisateur, jeton, saisies):
     et la réception déjà enregistrée est renvoyée avec creee=False.
     """
     try:
-        return _receptionner(commande_id, utilisateur, jeton, saisies), True
+        return reessayer_si_conflit(
+            lambda: _receptionner(commande_id, utilisateur, jeton, saisies)), True
     except _DejaEnregistree as deja:
         return deja.reception, False
     except (IntegrityError, OperationalError) as erreur:

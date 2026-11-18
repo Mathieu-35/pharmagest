@@ -1,6 +1,6 @@
 # PharmaGest — Dossier de conception
 
-Basé sur les sections 3, 4, 5 et 6 du cahier des charges. Les schémas utilisent Mermaid (affichés directement par GitHub). Les clés étrangères et contraintes définitives seront fixées au Sprint 2.
+Dossier de conception **final**, à jour avec l'application livrée (version 1.0). Basé sur les sections 3 à 7 du cahier des charges. Les schémas (cas d'utilisation, MCD, MLD, diagrammes UML) utilisent Mermaid, affiché directement par GitHub. Les sections 6 à 11 décrivent les règles ajoutées sprint par sprint.
 
 ## 1. Cas d'utilisation (acteurs et fonctions)
 
@@ -20,8 +20,11 @@ flowchart LR
     Stock --- U5[Réceptionner et inventorier]
     Caisse --- U6[Enregistrer ventes et paiements]
     Caisse --- U7[Imprimer reçus]
-    Caisse --- U8[Enregistrer retours autorisés]
+    Pharm --- U8[Enregistrer retours et annulations]
+    Admin --- U8
     Gest --- U9[Consulter statistiques et rapports]
+    Pharm --- U9
+    Stock --- U9
 ```
 
 ## 2. MCD — Modèle conceptuel de données
@@ -34,17 +37,23 @@ erDiagram
     COMMANDE_ACHAT ||--|{ LIGNE_ACHAT : contient
     MEDICAMENT ||--o{ LIGNE_ACHAT : concerne
     COMMANDE_ACHAT ||--o{ RECEPTION_ACHAT : "est receptionnee par"
-    RECEPTION_ACHAT ||--o{ LOT_STOCK : cree
+    RECEPTION_ACHAT ||--|{ LIGNE_RECEPTION : contient
+    LIGNE_ACHAT ||--o{ LIGNE_RECEPTION : "est recue par"
+    LOT_STOCK ||--o{ LIGNE_RECEPTION : "est alimente par"
     LOT_STOCK ||--o{ MOUVEMENT_STOCK : trace
     CLIENT |o--o{ VENTE : effectue
     VENTE ||--|{ LIGNE_VENTE : contient
     MEDICAMENT ||--o{ LIGNE_VENTE : concerne
     LOT_STOCK ||--o{ LIGNE_VENTE : "delivre depuis"
     VENTE ||--o{ PAIEMENT : "est reglee par"
-    VENTE ||--o{ RETOUR_VENTE : "peut etre retournee"
+    LIGNE_VENTE ||--o{ RETOUR_VENTE : "peut etre retournee"
     UTILISATEUR ||--o{ COMMANDE_ACHAT : cree
+    UTILISATEUR ||--o{ RECEPTION_ACHAT : receptionne
+    UTILISATEUR ||--o{ MOUVEMENT_STOCK : effectue
     UTILISATEUR ||--o{ VENTE : realise
+    UTILISATEUR ||--o{ RETOUR_VENTE : enregistre
     UTILISATEUR ||--o{ JOURNAL_AUDIT : genere
+    UTILISATEUR }o--o{ GROUPE_ROLE : "a pour roles"
 
     CATEGORIE {
         int id PK
@@ -96,7 +105,12 @@ erDiagram
     }
     RECEPTION_ACHAT {
         int id PK
+        uuid jeton UK
         datetime date_reception
+    }
+    LIGNE_RECEPTION {
+        int id PK
+        int quantite
     }
     MOUVEMENT_STOCK {
         int id PK
@@ -109,7 +123,9 @@ erDiagram
         int id PK
         string nom
         string telephone
+        string adresse
         bool actif
+        datetime date_creation
     }
     VENTE {
         int id PK
@@ -127,25 +143,33 @@ erDiagram
         string mode
         decimal montant
         string statut
+        string reference_transaction
+        datetime date
     }
     RETOUR_VENTE {
         int id PK
         int quantite
         string motif
         bool remis_en_stock
+        decimal montant_rembourse
         datetime date
     }
     UTILISATEUR {
         int id PK
         string identifiant
-        string role
+        string mot_de_passe_hache
         bool actif
+    }
+    GROUPE_ROLE {
+        int id PK
+        string nom
     }
     JOURNAL_AUDIT {
         int id PK
         string action
-        datetime date
+        string objet
         text detail
+        datetime date
     }
 ```
 
@@ -158,7 +182,7 @@ Clés primaires soulignées par `PK`, clés étrangères par `FK`.
 | `categorie` | id PK, nom, description |
 | `medicament` | id PK, nom_commercial, denomination_generique, categorie_id FK, forme, dosage, laboratoire, code_barres (unique, nullable), photo, prix_achat, prix_vente, seuil_alerte, statut, date_creation |
 | `fournisseur` | id PK, nom, adresse, telephone, email, numero_fiscal, contact_principal, actif |
-| `client` | id PK, nom, telephone, actif |
+| `client` | id PK, nom, telephone, adresse, actif, date_creation |
 | `commande_achat` | id PK, fournisseur_id FK, utilisateur_id FK, statut, date_commande ; le montant total est calculé depuis les lignes |
 | `ligne_achat` | id PK, commande_id FK, medicament_id FK, quantite, prix_achat |
 | `reception_achat` | id PK, commande_id FK, utilisateur_id FK, jeton (unique, anti double réception), date_reception |
@@ -167,10 +191,10 @@ Clés primaires soulignées par `PK`, clés étrangères par `FK`.
 | `mouvement_stock` | id PK, lot_id FK, utilisateur_id FK, type (entrée, sortie, retour, correction), quantite, date, motif |
 | `vente` | id PK, client_id FK (nullable), utilisateur_id FK, jeton (unique, anti double validation), date, statut ; le total est calculé depuis les lignes |
 | `ligne_vente` | id PK, vente_id FK, medicament_id FK, lot_id FK, quantite, prix_applique |
-| `paiement` | id PK, vente_id FK, mode, montant, statut |
+| `paiement` | id PK, vente_id FK, mode, montant, statut, reference_transaction, date |
 | `retour_vente` | id PK, ligne_vente_id FK, utilisateur_id FK, quantite, motif, remis_en_stock, montant_rembourse, date |
-| `utilisateur` | table `auth_user` de Django + groupes (rôles) et permissions |
-| `journal_audit` | id PK, utilisateur_id FK, action, detail, date |
+| `utilisateur` | table `auth_user` de Django (mot de passe haché) ; rôles = `auth_group` ; permissions = `auth_permission` |
+| `journal_audit` | id PK, utilisateur_id FK (nullable), action, objet, detail, date |
 
 ### Contraintes issues des règles de gestion
 
@@ -280,3 +304,95 @@ Rôles ayant le tableau de bord : tous. Statistiques financières : Administrate
 **Documents PDF** (ReportLab) : reçu de vente (A5), facture, bon de commande, bon de réception ; **rapports** : stock, ventes, achats, produits proches de la péremption. Chaque document porte les informations de la pharmacie, le numéro, la date, les lignes, quantités, prix et totaux. Les informations de la pharmacie, la devise et les mentions légales viennent du fichier `.env` (`PHARMACIE_*`, `DEVISE`) : les mentions légales et fiscales applicables à Madagascar doivent y être renseignées par la pharmacie.
 
 **Numérotation** : vente `V-000001`, facture `F-000001` (même numéro que la vente), commande `CA-000001`, réception `BR-000001`.
+
+## 10. Diagrammes UML complémentaires
+
+### Cycle de vie d'une commande d'achat (diagramme d'états)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Brouillon
+    Brouillon --> Commandee : valider
+    Brouillon --> Annulee : annuler
+    Commandee --> Annulee : annuler (aucune réception)
+    Commandee --> Partielle : réception partielle
+    Commandee --> Receptionnee : réception complète
+    Partielle --> Partielle : réception partielle
+    Partielle --> Receptionnee : dernière réception
+    Receptionnee --> [*]
+    Annulee --> [*]
+```
+
+### Réception de marchandises (diagramme de séquence)
+
+```mermaid
+sequenceDiagram
+    actor G as Gestionnaire de stock
+    participant V as Vue réception
+    participant B as Base de données
+    G->>V: Saisit quantités, n° de lot, péremption (jeton du formulaire)
+    V->>B: Transaction atomique
+    B->>B: Jeton déjà utilisé ? alors rien n'est refait (RG05)
+    B->>B: Quantité ≤ reste à recevoir ? lot non périmé ?
+    B->>B: Crée la réception et ses lignes
+    B->>B: Crée ou complète le lot, mouvement d'entrée
+    B->>B: Met à jour le statut de la commande
+    B-->>V: Succès
+    V-->>G: Stock augmenté, bon de réception disponible
+```
+
+### Vente, retour et annulation (diagramme d'états d'une vente)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Validee : validation atomique (sortie de stock)
+    Validee --> Validee : retour partiel (opération compensatoire)
+    Validee --> Annulee : annulation (retour de tout le reste)
+    Annulee --> [*]
+```
+
+### Paiement (diagramme d'états)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Confirme : espèces
+    [*] --> EnAttente : mobile money ou autre moyen
+    EnAttente --> Confirme : vérification de la transaction (référence saisie)
+    EnAttente --> Echoue : paiement non abouti ou vente annulée
+    Confirme --> [*]
+    Echoue --> [*]
+```
+
+### Architecture de l'application (composants)
+
+```mermaid
+flowchart TB
+    Navigateur[Navigateur web : Bootstrap 5] --> Vues
+    subgraph Django[Application Django : MVT]
+        Vues[Vues et permissions] --> Services[Services métier : achats, ventes, stock]
+        Vues --> Formulaires[Formulaires et validation serveur]
+        Services --> Modeles[Modèles]
+        Vues --> PDF[ReportLab : PDF]
+        Modeles --> Audit[Journal d'audit]
+    end
+    Modeles --> BD[(SQLite en développement / PostgreSQL en production)]
+    Modeles --> Media[Photos : dossier media]
+    Sauvegarde[Commandes sauvegarder et restaurer] --> BD
+    Sauvegarde --> Media
+```
+
+## 11. Sécurité et exploitation (Sprint 8)
+
+| Exigence (section 8.1) | Réalisation |
+|---|---|
+| Protection CSRF | Middleware actif ; test qui vérifie qu'aucun formulaire POST n'oublie son jeton |
+| Validation serveur | Formulaires et services refusent quantités et prix invalides, indépendamment de l'interface |
+| Contrôle des permissions sur chaque vue | Décorateur `permission_requise` ; test qui parcourt **toutes** les routes (visiteur anonyme, utilisateur sans rôle) |
+| Type et taille des images | JPEG, PNG, WEBP, 2 Mo maximum, vérifié à l'envoi |
+| HTTPS en production | Redirection HTTPS, cookies sécurisés, HSTS dès `DJANGO_DEBUG=False` |
+| Secrets en variables d'environnement | `.env` non versionné ; en production, clé secrète et hôtes obligatoires, sinon l'application refuse de démarrer |
+| Sauvegardes protégées et testées | Commandes `sauvegarder` (archive vérifiée par empreintes SHA-256, accès restreint au propriétaire) et `restaurer` (mode `--essai`, transaction, sauvegarde de sécurité) |
+| Journalisation des opérations sensibles | Journal d'audit : connexions, échecs de connexion, comptes, mots de passe, catalogue, achats, ventes, retours, inventaires |
+| Doubles ventes et doubles réceptions | Jetons uniques, décrément conditionnel du stock, relance après conflit entre transactions |
+
+**Moteurs de base de données** : SQLite pour le développement et les tests ; PostgreSQL recommandé en production (`DB_ENGINE=postgresql`). Le format de sauvegarde (JSON Django) est indépendant du moteur.
