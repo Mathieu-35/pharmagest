@@ -7,6 +7,7 @@ Les valeurs sensibles sont lues dans les variables d'environnement
 import os
 from pathlib import Path
 
+from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -101,3 +102,6 @@ MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Les messages Django prennent les classes d'alerte Bootstrap
+MESSAGE_TAGS = {messages.ERROR: "danger"}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block titre %}{{ medicament }} — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{{ medicament }}
+    {% if not medicament.est_actif %}<span class="badge text-bg-secondary">Archivé</span>{% endif %}
+  </h1>
+  <div>
+    <a href="{% url 'medicaments:modifier' medicament.pk %}" class="btn btn-outline-primary">Modifier</a>
+    <a href="{% url 'medicaments:supprimer' medicament.pk %}" class="btn btn-outline-danger">Supprimer</a>
+    <a href="{% url 'medicaments:liste' %}" class="btn btn-outline-secondary">Retour à la liste</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-md-4">
+    <div class="card card-body text-center">
+      {% if medicament.photo %}
+        <img src="{{ medicament.photo.url }}" alt="{{ medicament.nom_commercial }}" class="img-fluid rounded">
+      {% else %}
+        <span class="text-muted">Pas de photo</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-12 col-md-8">
+    <div class="card card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-4">Nom commercial</dt><dd class="col-sm-8">{{ medicament.nom_commercial }}</dd>
+        <dt class="col-sm-4">Dénomination générique</dt><dd class="col-sm-8">{{ medicament.denomination_generique|default:"—" }}</dd>
+        <dt class="col-sm-4">Catégorie</dt><dd class="col-sm-8">{{ medicament.categorie }}</dd>
+        <dt class="col-sm-4">Forme</dt><dd class="col-sm-8">{{ medicament.get_forme_display }}</dd>
+        <dt class="col-sm-4">Dosage</dt><dd class="col-sm-8">{{ medicament.dosage|default:"—" }}</dd>
+        <dt class="col-sm-4">Laboratoire</dt><dd class="col-sm-8">{{ medicament.laboratoire|default:"—" }}</dd>
+        <dt class="col-sm-4">Code-barres</dt><dd class="col-sm-8">{{ medicament.code_barres|default:"—" }}</dd>
+        <dt class="col-sm-4">Prix d'achat</dt><dd class="col-sm-8">{{ medicament.prix_achat }}</dd>
+        <dt class="col-sm-4">Prix de vente</dt><dd class="col-sm-8">{{ medicament.prix_vente }}</dd>
+        <dt class="col-sm-4">Seuil d'alerte</dt><dd class="col-sm-8">{{ medicament.seuil_alerte }}</dd>
+        <dt class="col-sm-4">Date de création</dt><dd class="col-sm-8">{{ medicament.date_creation|date:"d/m/Y H:i" }}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<h2 class="h5 mt-4">Lots</h2>
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table mb-0">
+    <thead><tr><th>N° de lot</th><th>Péremption</th><th class="text-end">Reçu</th><th class="text-end">Restant</th><th>État</th></tr></thead>
+    <tbody>
+      {% for lot in lots %}
+      <tr>
+        <td>{{ lot.numero_lot }}</td>
+        <td>{{ lot.date_peremption|date:"d/m/Y" }}</td>
+        <td class="text-end">{{ lot.quantite_recue }}</td>
+        <td class="text-end">{{ lot.quantite_restante }}</td>
+        <td>
+          {% if lot.est_perime %}<span class="badge text-bg-danger">Périmé</span>
+          {% elif lot.bloque %}<span class="badge text-bg-warning">Bloqué</span>
+          {% else %}<span class="badge text-bg-success">Disponible</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center text-muted py-3">Aucun lot enregistré.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

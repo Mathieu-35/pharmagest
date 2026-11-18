@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titre %}Supprimer {{ categorie }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Supprimer la catégorie « {{ categorie }} »</h1>
+<div class="card card-body">
+  {% if utilisee %}
+    <div class="alert alert-warning">
+      Cette catégorie est utilisée par des médicaments : elle ne peut pas être supprimée.
+    </div>
+    <div><a href="{% url 'medicaments:categories' %}" class="btn btn-outline-secondary">Retour</a></div>
+  {% else %}
+    <div class="alert alert-danger">Cette catégorie sera supprimée définitivement.</div>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Supprimer</button>
+      <a href="{% url 'medicaments:categories' %}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

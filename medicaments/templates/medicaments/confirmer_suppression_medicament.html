@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titre %}Supprimer {{ medicament }} — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Supprimer « {{ medicament }} »</h1>
+<div class="card card-body">
+  {% if historique %}
+    <div class="alert alert-warning">
+      Ce médicament a un historique (lots, achats ou ventes). Il ne sera pas supprimé : il sera <strong>archivé</strong>
+      pour protéger l'historique.
+    </div>
+  {% else %}
+    <div class="alert alert-danger">Ce médicament n'a aucun historique. Il sera <strong>supprimé définitivement</strong>.</div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn {% if historique %}btn-warning{% else %}btn-danger{% endif %}">
+      {% if historique %}Archiver{% else %}Supprimer{% endif %}
+    </button>
+    <a href="{% url 'medicaments:detail' medicament.pk %}" class="btn btn-outline-secondary">Annuler</a>
+  </form>
+</div>
+{% endblock %}

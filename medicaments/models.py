@@ -2,6 +2,8 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
 
+from .validators import valider_photo
+
 
 class Categorie(models.Model):
     nom = models.CharField("nom", max_length=100, unique=True)
@@ -48,7 +50,9 @@ class Medicament(models.Model):
     code_barres = models.CharField(
         "code-barres", max_length=50, unique=True, null=True, blank=True
     )
-    photo = models.ImageField("photo", upload_to="medicaments/", blank=True)
+    photo = models.ImageField(
+        "photo", upload_to="medicaments/", blank=True, validators=[valider_photo]
+    )
     prix_achat = models.DecimalField(
         "prix d'achat", max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
     )
@@ -86,3 +90,11 @@ class Medicament(models.Model):
     @property
     def est_actif(self):
         return self.statut == self.Statut.ACTIF
+
+    def a_historique(self):
+        """Vrai si le médicament apparaît dans des lots, achats ou ventes (RG10)."""
+        return (
+            self.lots.exists()
+            or self.lignes_achat.exists()
+            or self.lignes_vente.exists()
+        )

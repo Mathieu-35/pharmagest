@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block titre %}Médicaments — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Médicaments</h1>
+  <a href="{% url 'medicaments:creer' %}" class="btn btn-success">Ajouter un médicament</a>
+</div>
+
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <label class="form-label" for="q">Recherche (nom ou code-barres)</label>
+      <input type="search" class="form-control" id="q" name="q" value="{{ q }}">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label" for="categorie">Catégorie</label>
+      <select class="form-select" id="categorie" name="categorie">
+        <option value="">Toutes</option>
+        {% for c in categories %}
+          <option value="{{ c.pk }}" {% if categorie_id == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label" for="statut">Statut</label>
+      <select class="form-select" id="statut" name="statut">
+        {% for valeur, libelle in statuts %}
+          <option value="{{ valeur }}" {% if statut == valeur %}selected{% endif %}>{{ libelle }}</option>
+        {% endfor %}
+        <option value="tous" {% if not statut %}selected{% endif %}>Tous</option>
+      </select>
+    </div>
+    <div class="col-8 col-md-3">
+      <label class="form-label" for="tri">Trier par</label>
+      <select class="form-select" id="tri" name="tri">
+        {% for valeur, libelle in tris %}
+          <option value="{{ valeur }}" {% if tri == valeur %}selected{% endif %}>{{ libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-4 col-md-1 d-grid">
+      <button type="submit" class="btn btn-outline-success">Filtrer</button>
+    </div>
+  </div>
+</form>
+
+<div class="table-responsive bg-white rounded shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th>Photo</th><th>Médicament</th><th>Catégorie</th>
+        <th class="text-end">Prix de vente</th><th class="text-end">Stock disponible</th>
+        <th>Statut</th><th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in page %}
+      <tr>
+        <td style="width:64px">
+          {% if m.photo %}
+            <img src="{{ m.photo.url }}" alt="{{ m.nom_commercial }}" class="rounded" style="width:48px;height:48px;object-fit:cover">
+          {% else %}
+            <div class="bg-light border rounded text-center text-muted" style="width:48px;height:48px;line-height:48px">—</div>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'medicaments:detail' m.pk %}" class="fw-semibold text-decoration-none">{{ m.nom_commercial }}</a>
+          <div class="small text-muted">{{ m.dosage }}{% if m.code_barres %} · {{ m.code_barres }}{% endif %}</div>
+        </td>
+        <td>{{ m.categorie.nom }}</td>
+        <td class="text-end">{{ m.prix_vente }}</td>
+        <td class="text-end">
+          {% if m.stock_disponible == 0 %}
+            <span class="badge text-bg-danger">Rupture</span>
+          {% elif m.stock_disponible <= m.seuil_alerte %}
+            <span class="badge text-bg-warning">{{ m.stock_disponible }}</span>
+          {% else %}
+            {{ m.stock_disponible }}
+          {% endif %}
+        </td>
+        <td>
+          {% if m.est_actif %}<span class="badge text-bg-success">Actif</span>
+          {% else %}<span class="badge text-bg-secondary">Archivé</span>{% endif %}
+        </td>
+        <td class="text-end text-nowrap">
+          <a href="{% url 'medicaments:modifier' m.pk %}" class="btn btn-sm btn-outline-primary">Modifier</a>
+          <a href="{% url 'medicaments:supprimer' m.pk %}" class="btn btn-sm btn-outline-danger">Supprimer</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-4">Aucun médicament trouvé.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="mt-3">{% include "_pagination.html" %}</div>
+{% endblock %}
