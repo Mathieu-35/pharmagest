@@ -1,0 +1,8 @@
+Bonjour {{ user.get_username }},
+
+Une réinitialisation du mot de passe de votre compte PharmaGest a été demandée.
+Pour choisir un nouveau mot de passe, ouvrez ce lien :
+
+{{ protocol }}://{{ domain }}{% url 'utilisateurs:reinitialisation_confirmer' uidb64=uid token=token %}
+
+Ce lien est personnel et expire automatiquement. Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe ne sera pas modifié.

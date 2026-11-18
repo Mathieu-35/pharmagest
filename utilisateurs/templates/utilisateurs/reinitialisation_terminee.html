@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titre %}Mot de passe modifié — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="p-5 bg-white rounded shadow-sm text-center">
+  <h1 class="h3">Mot de passe modifié</h1>
+  <p>Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.</p>
+  <a href="{% url 'utilisateurs:connexion' %}" class="btn btn-success">Se connecter</a>
+</div>
+{% endblock %}

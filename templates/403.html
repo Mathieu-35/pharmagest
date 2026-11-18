@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titre %}Accès interdit — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="p-5 bg-white rounded shadow-sm text-center">
+  <h1 class="display-6">Accès interdit</h1>
+  <p class="lead">Vous n'avez pas l'autorisation d'accéder à cette page.</p>
+  <p class="text-muted">Si vous pensez que c'est une erreur, contactez l'administrateur.</p>
+  <a href="{% url 'accueil' %}" class="btn btn-success">Retour à l'accueil</a>
+</div>
+{% endblock %}

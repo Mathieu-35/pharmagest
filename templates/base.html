@@ -16,11 +16,31 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="menu">
+        {% if user.is_authenticated %}
         <ul class="navbar-nav me-auto">
           <li class="nav-item"><a class="nav-link" href="{% url 'accueil' %}">Accueil</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'medicaments:liste' %}">Médicaments</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'medicaments:categories' %}">Catégories</a></li>
+          {% if perms.medicaments.view_medicament %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'medicaments:liste' %}">Médicaments</a></li>
+          {% endif %}
+          {% if perms.medicaments.view_categorie %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'medicaments:categories' %}">Catégories</a></li>
+          {% endif %}
+          {% if perms.auth.view_user %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'utilisateurs:liste' %}">Utilisateurs</a></li>
+          {% endif %}
+          {% if perms.utilisateurs.view_journalaudit %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'utilisateurs:journal' %}">Journal</a></li>
+          {% endif %}
         </ul>
+        <div class="d-flex align-items-center gap-2 text-white">
+          <span class="small">{{ user.get_full_name|default:user.username }}</span>
+          <a class="btn btn-sm btn-outline-light" href="{% url 'utilisateurs:mot_de_passe_changer' %}">Mot de passe</a>
+          <form method="post" action="{% url 'utilisateurs:deconnexion' %}" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-light">Déconnexion</button>
+          </form>
+        </div>
+        {% endif %}
       </div>
     </div>
   </nav>

@@ -5,6 +5,9 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from utilisateurs import audit
+from utilisateurs.decorators import permission_requise
+
 from .forms import CategorieForm, MedicamentForm
 from .models import Categorie, Medicament
 
@@ -39,6 +42,7 @@ def _paginer(request, queryset):
 
 # ---------------------------------------------------------------- Médicaments
 
+@permission_requise("medicaments.view_medicament")
 def liste_medicaments(request):
     aujourdhui = timezone.localdate()
     medicaments = Medicament.objects.select_related("categorie").annotate(
@@ -87,6 +91,7 @@ def liste_medicaments(request):
     })
 
 
+@permission_requise("medicaments.view_medicament")
 def detail_medicament(request, pk):
     medicament = get_object_or_404(Medicament.objects.select_related("categorie"), pk=pk)
     return render(request, "medicaments/detail.html", {
@@ -95,10 +100,12 @@ def detail_medicament(request, pk):
     })
 
 
+@permission_requise("medicaments.add_medicament")
 def creer_medicament(request):
     form = MedicamentForm(request.POST or None, request.FILES or None)
     if request.method == "POST" and form.is_valid():
         medicament = form.save()
+        audit.enregistrer(request.user, "Médicament ajouté", medicament)
         messages.success(request, f"Le médicament « {medicament} » a été ajouté.")
         return redirect("medicaments:detail", pk=medicament.pk)
     return render(request, "medicaments/formulaire_medicament.html", {
@@ -106,11 +113,13 @@ def creer_medicament(request):
     })
 
 
+@permission_requise("medicaments.change_medicament")
 def modifier_medicament(request, pk):
     medicament = get_object_or_404(Medicament, pk=pk)
     form = MedicamentForm(request.POST or None, request.FILES or None, instance=medicament)
     if request.method == "POST" and form.is_valid():
         form.save()
+        audit.enregistrer(request.user, "Médicament modifié", medicament)
         messages.success(request, f"Le médicament « {medicament} » a été modifié.")
         return redirect("medicaments:detail", pk=medicament.pk)
     return render(request, "medicaments/formulaire_medicament.html", {
@@ -118,6 +127,7 @@ def modifier_medicament(request, pk):
     })
 
 
+@permission_requise("medicaments.delete_medicament")
 def supprimer_medicament(request, pk):
     """Supprime si l'historique n'est pas compromis, sinon archive (RG10)."""
     medicament = get_object_or_404(Medicament, pk=pk)
@@ -127,12 +137,14 @@ def supprimer_medicament(request, pk):
         if historique:
             medicament.statut = Medicament.Statut.ARCHIVE
             medicament.save(update_fields=["statut"])
+            audit.enregistrer(request.user, "Médicament archivé", nom)
             messages.warning(
                 request,
                 f"« {nom} » a un historique (lots, achats ou ventes) : il a été archivé, pas supprimé.",
             )
             return redirect("medicaments:detail", pk=medicament.pk)
         medicament.delete()
+        audit.enregistrer(request.user, "Médicament supprimé", nom)
         messages.success(request, f"Le médicament « {nom} » a été supprimé.")
         return redirect("medicaments:liste")
     return render(request, "medicaments/confirmer_suppression_medicament.html", {
@@ -142,6 +154,7 @@ def supprimer_medicament(request, pk):
 
 # ----------------------------------------------------------------- Catégories
 
+@permission_requise("medicaments.view_categorie")
 def liste_categories(request):
     categories = Categorie.objects.annotate(nb_medicaments=Count("medicaments")).order_by("nom")
     q = request.GET.get("q", "").strip()
@@ -153,10 +166,12 @@ def liste_categories(request):
     })
 
 
+@permission_requise("medicaments.add_categorie")
 def creer_categorie(request):
     form = CategorieForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         categorie = form.save()
+        audit.enregistrer(request.user, "Catégorie ajoutée", categorie)
         messages.success(request, f"La catégorie « {categorie} » a été ajoutée.")
         return redirect("medicaments:categories")
     return render(request, "medicaments/formulaire_categorie.html", {
@@ -164,11 +179,13 @@ def creer_categorie(request):
     })
 
 
+@permission_requise("medicaments.change_categorie")
 def modifier_categorie(request, pk):
     categorie = get_object_or_404(Categorie, pk=pk)
     form = CategorieForm(request.POST or None, instance=categorie)
     if request.method == "POST" and form.is_valid():
         form.save()
+        audit.enregistrer(request.user, "Catégorie modifiée", categorie)
         messages.success(request, f"La catégorie « {categorie} » a été modifiée.")
         return redirect("medicaments:categories")
     return render(request, "medicaments/formulaire_categorie.html", {
@@ -176,6 +193,7 @@ def modifier_categorie(request, pk):
     })
 
 
+@permission_requise("medicaments.delete_categorie")
 def supprimer_categorie(request, pk):
     categorie = get_object_or_404(Categorie, pk=pk)
     utilisee = categorie.medicaments.exists()
@@ -188,6 +206,7 @@ def supprimer_categorie(request, pk):
         else:
             nom = str(categorie)
             categorie.delete()
+            audit.enregistrer(request.user, "Catégorie supprimée", nom)
             messages.success(request, f"La catégorie « {nom} » a été supprimée.")
         return redirect("medicaments:categories")
     return render(request, "medicaments/confirmer_suppression_categorie.html", {

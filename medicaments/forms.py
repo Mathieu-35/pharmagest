@@ -1,22 +1,8 @@
 from django import forms
 
+from config.formulaires import BootstrapFormMixin
+
 from .models import Categorie, Medicament
-
-
-class BootstrapFormMixin:
-    """Applique les classes Bootstrap 5 aux champs."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for champ in self.fields.values():
-            widget = champ.widget
-            if isinstance(widget, forms.CheckboxInput):
-                classe = "form-check-input"
-            elif isinstance(widget, forms.Select):
-                classe = "form-select"
-            else:
-                classe = "form-control"
-            widget.attrs["class"] = f"{widget.attrs.get('class', '')} {classe}".strip()
 
 
 class CategorieForm(BootstrapFormMixin, forms.ModelForm):

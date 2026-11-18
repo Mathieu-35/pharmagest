@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titre %}Mot de passe oublié — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-6 col-lg-4">
+    <h1 class="h3 mb-3 text-center">Mot de passe oublié</h1>
+    <form method="post" class="card card-body">
+      {% csrf_token %}
+      <p class="text-muted">Saisissez l'adresse e-mail de votre compte : un lien de réinitialisation vous sera envoyé.</p>
+      {% include "_formulaire.html" %}
+      <button type="submit" class="btn btn-success w-100">Envoyer le lien</button>
+      <div class="text-center mt-3"><a href="{% url 'utilisateurs:connexion' %}">Retour à la connexion</a></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

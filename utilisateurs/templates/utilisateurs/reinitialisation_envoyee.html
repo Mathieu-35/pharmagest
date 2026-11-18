@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titre %}E-mail envoyé — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="p-5 bg-white rounded shadow-sm text-center">
+  <h1 class="h3">Vérifiez votre messagerie</h1>
+  <p>Si un compte correspond à cette adresse, un e-mail contenant un lien de réinitialisation vient d'être envoyé.</p>
+  <a href="{% url 'utilisateurs:connexion' %}" class="btn btn-success">Retour à la connexion</a>
+</div>
+{% endblock %}

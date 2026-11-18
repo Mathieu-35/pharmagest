@@ -3,8 +3,23 @@
 {% endif %}
 {% for champ in form %}
   <div class="mb-3">
-    <label for="{{ champ.id_for_label }}" class="form-label">{{ champ.label }}</label>
-    {{ champ }}
+    {% if champ.widget_type == "checkbox" %}
+      <div class="form-check">
+        {{ champ }}
+        <label for="{{ champ.id_for_label }}" class="form-check-label">{{ champ.label }}</label>
+      </div>
+    {% elif champ.widget_type == "checkboxselectmultiple" %}
+      <div class="form-label">{{ champ.label }}</div>
+      {% for choix in champ %}
+        <div class="form-check">
+          {{ choix.tag }}
+          <label for="{{ choix.id_for_label }}" class="form-check-label">{{ choix.choice_label }}</label>
+        </div>
+      {% endfor %}
+    {% else %}
+      <label for="{{ champ.id_for_label }}" class="form-label">{{ champ.label }}</label>
+      {{ champ }}
+    {% endif %}
     {% if champ.help_text %}<div class="form-text">{{ champ.help_text }}</div>{% endif %}
     {% for erreur in champ.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
   </div>

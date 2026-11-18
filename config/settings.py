@@ -103,5 +103,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Authentification
+LOGIN_URL = "utilisateurs:connexion"
+LOGIN_REDIRECT_URL = "accueil"
+LOGOUT_REDIRECT_URL = "utilisateurs:connexion"
+
+# E-mails (réinitialisation du mot de passe). En développement, les e-mails
+# s'affichent dans le terminal ; en production, définir un vrai serveur SMTP.
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = os.environ.get("DJANGO_DEFAULT_FROM_EMAIL", "PharmaGest <noreply@pharmagest.local>")
+
 # Les messages Django prennent les classes d'alerte Bootstrap
 MESSAGE_TAGS = {messages.ERROR: "danger"}

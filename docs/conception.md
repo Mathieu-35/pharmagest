@@ -218,3 +218,19 @@ sequenceDiagram
     B-->>V: Succès
     V-->>C: Reçu
 ```
+
+## 6. Rôles et permissions (Sprint 4)
+
+Les rôles de la section 3 du cahier des charges sont des groupes Django, créés automatiquement à la migration. Un utilisateur peut cumuler plusieurs rôles si l'administrateur les lui accorde. Les permissions détaillées ci-dessous sont un point de départ que l'administrateur peut ajuster dans l'administration Django.
+
+| Rôle | Permissions initiales |
+|---|---|
+| Administrateur | Toutes les permissions de l'application, gestion des comptes et rôles, accès à l'administration Django ; journal d'audit en lecture seule |
+| Pharmacien responsable | Médicaments et catégories (tout) ; lots (lecture, ajout, modification) ; consultation des achats, ventes, fournisseurs, clients ; enregistrement des retours |
+| Gestionnaire de stock | Fournisseurs, commandes, réceptions, lots (lecture, ajout, modification) ; mouvements de stock (lecture, ajout) ; consultation des médicaments |
+| Caissier | Ventes et lignes de vente (lecture, ajout) ; paiements et clients (lecture, ajout, modification) ; consultation des médicaments et lots |
+| Responsable de gestion | Consultation seule des médicaments, stocks, achats, ventes, fournisseurs et clients |
+
+Chaque vue vérifie la permission correspondante (RG11) : visiteur non connecté → page de connexion ; utilisateur connecté sans permission → page « Accès interdit » (403).
+
+Le journal d'audit (RG09) enregistre : connexions et déconnexions, création / modification / activation / désactivation des comptes, changements de mot de passe, ajout / modification / archivage / suppression des médicaments et des catégories.

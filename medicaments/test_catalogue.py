@@ -54,6 +54,9 @@ class CatalogueTestCase(TestCase):
         shutil.rmtree(MEDIA_TEST, ignore_errors=True)
 
     def setUp(self):
+        # Les pages du catalogue exigent une connexion (Sprint 4) : on se connecte en administrateur
+        admin = get_user_model().objects.create(username="admin_test", is_superuser=True, is_staff=True)
+        self.client.force_login(admin)
         self.categorie = Categorie.objects.create(nom="Antalgiques")
         self.autre_categorie = Categorie.objects.create(nom="Vitamines")
 
