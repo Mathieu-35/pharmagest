@@ -106,6 +106,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Nombre de jours avant la péremption à partir duquel un lot est signalé « proche de la péremption »
 JOURS_ALERTE_PEREMPTION = int(os.environ.get("JOURS_ALERTE_PEREMPTION", "30"))
 
+# Informations de la pharmacie imprimées sur les documents PDF (reçus, factures, bons, rapports).
+# À renseigner dans le fichier .env ; les mentions légales et fiscales doivent être celles
+# applicables à Madagascar (ou au territoire d'exploitation).
+PHARMACIE = {
+    "nom": os.environ.get("PHARMACIE_NOM", "PharmaGest"),
+    "adresse": os.environ.get("PHARMACIE_ADRESSE", ""),
+    "telephone": os.environ.get("PHARMACIE_TELEPHONE", ""),
+    "email": os.environ.get("PHARMACIE_EMAIL", ""),
+    "numero_fiscal": os.environ.get("PHARMACIE_NUMERO_FISCAL", ""),
+    "mentions_legales": os.environ.get("PHARMACIE_MENTIONS_LEGALES", ""),
+}
+DEVISE = os.environ.get("DEVISE", "Ar")
+
 # Authentification
 LOGIN_URL = "utilisateurs:connexion"
 LOGIN_REDIRECT_URL = "accueil"

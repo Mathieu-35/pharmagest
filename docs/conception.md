@@ -258,3 +258,25 @@ Le journal d'audit (RG09) enregistre : connexions et déconnexions, création / 
 **Clients** : ajout, modification, activation / désactivation, historique des ventes ; une vente comptoir n'exige pas de client.
 
 **Droits** : la caisse est réservée aux rôles ayant la permission d'ajouter une vente (Caissier, Administrateur) ; les retours et annulations à ceux qui peuvent enregistrer un retour (Pharmacien responsable, Administrateur).
+
+## 9. Tableau de bord, documents et rapports PDF (Sprint 7)
+
+**Tableau de bord** (page d'accueil) : chaque bloc dépend du rôle.
+
+| Bloc | Permission requise |
+|---|---|
+| Médicaments actifs, stocks faibles, ruptures, péremptions proches, lots périmés, alertes | consulter les lots (stock) |
+| Ventes du jour, produits les plus vendus | consulter les ventes |
+| Chiffre d'affaires, encaissements, marge, ventes par jour, achats de la période | `rapports.voir_statistiques_financieres` (+ consulter les achats pour les achats) |
+
+Rôles ayant le tableau de bord : tous. Statistiques financières : Administrateur, Pharmacien responsable, Responsable de gestion. Rapports PDF : ces trois rôles et le Gestionnaire de stock. Les permissions sont portées par un modèle sans table (`Rapport`) et ajustables dans l'administration.
+
+**Définitions** (tout est calculé à partir des données) :
+- *Chiffre d'affaires* : ventes validées de la période, au prix appliqué, nettes des retours ; les ventes annulées sont exclues.
+- *Encaissements* : paiements **confirmés** de la période (un paiement en attente ou échoué n'est pas un encaissement). Les remboursements de retours et les paiements en attente sont affichés à part.
+- *Marge commerciale brute* : chiffre d'affaires − coût d'achat des produits vendus. Le coût est celui du lot (moyenne pondérée de ses réceptions) ou, à défaut, le prix d'achat du médicament. **Ce n'est pas un bénéfice net** : les autres charges ne sont pas prises en compte.
+- *Stock faible* : stock disponible strictement inférieur au seuil d'alerte ; *péremption proche* : dans `JOURS_ALERTE_PEREMPTION` jours.
+
+**Documents PDF** (ReportLab) : reçu de vente (A5), facture, bon de commande, bon de réception ; **rapports** : stock, ventes, achats, produits proches de la péremption. Chaque document porte les informations de la pharmacie, le numéro, la date, les lignes, quantités, prix et totaux. Les informations de la pharmacie, la devise et les mentions légales viennent du fichier `.env` (`PHARMACIE_*`, `DEVISE`) : les mentions légales et fiscales applicables à Madagascar doivent y être renseignées par la pharmacie.
+
+**Numérotation** : vente `V-000001`, facture `F-000001` (même numéro que la vente), commande `CA-000001`, réception `BR-000001`.

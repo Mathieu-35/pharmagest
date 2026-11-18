@@ -27,6 +27,12 @@ APPLICATIONS = [
 ACHATS = ["achats.commandeachat", "achats.ligneachat", "achats.receptionachat", "achats.lignereception"]
 VENTES = ["ventes.vente", "ventes.lignevente", "ventes.paiement", "ventes.retourvente"]
 
+# Permissions propres au tableau de bord et aux rapports (modèle « Rapport »)
+TABLEAU = "voir_tableau_de_bord"
+FINANCES = "voir_statistiques_financieres"
+RAPPORTS = "generer_rapports"
+CODENAMES_PERSONNALISES = {TABLEAU, FINANCES, RAPPORTS}
+
 PERMISSIONS_PAR_ROLE = {
     # Contrôle les médicaments, lots, péremptions, achats et ventes
     PHARMACIEN: {
@@ -39,6 +45,7 @@ PERMISSIONS_PAR_ROLE = {
         **{m: LECTURE for m in ACHATS},
         **{m: LECTURE for m in VENTES},
         "ventes.retourvente": ["view", "add"],
+        "rapports.rapport": [TABLEAU, FINANCES, RAPPORTS],
     },
     # Gère fournisseurs, commandes, réceptions et inventaires
     GESTIONNAIRE_STOCK: {
@@ -48,6 +55,7 @@ PERMISSIONS_PAR_ROLE = {
         "stock.mouvementstock": ["view", "add"],
         "medicaments.medicament": LECTURE,
         "medicaments.categorie": LECTURE,
+        "rapports.rapport": [TABLEAU, RAPPORTS],
     },
     # Enregistre les ventes, les paiements et imprime les reçus
     CAISSIER: {
@@ -58,6 +66,7 @@ PERMISSIONS_PAR_ROLE = {
         "medicaments.medicament": LECTURE,
         "medicaments.categorie": LECTURE,
         "stock.lotstock": LECTURE,
+        "rapports.rapport": [TABLEAU],
     },
     # Consulte les statistiques, les recettes et les rapports
     RESPONSABLE_GESTION: {
@@ -69,6 +78,7 @@ PERMISSIONS_PAR_ROLE = {
         "clients.client": LECTURE,
         **{m: LECTURE for m in ACHATS},
         **{m: LECTURE for m in VENTES},
+        "rapports.rapport": [TABLEAU, FINANCES, RAPPORTS],
     },
 }
 
@@ -93,10 +103,10 @@ def _permissions(definition, using):
     for modele, actions in definition.items():
         app_label, nom_modele = modele.split(".")
         for action in actions:
+            codename = action if action in CODENAMES_PERSONNALISES else f"{action}_{nom_modele}"
             trouvees.append(
                 Permission.objects.using(using).get(
-                    content_type__app_label=app_label,
-                    codename=f"{action}_{nom_modele}",
+                    content_type__app_label=app_label, codename=codename,
                 )
             )
     return trouvees

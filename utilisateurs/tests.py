@@ -60,7 +60,13 @@ class RolesTests(TestCase):
     def test_responsable_gestion_en_lecture_seule(self):
         permissions = self.groupe(roles.RESPONSABLE_GESTION).permissions
         self.assertTrue(permissions.exists())
-        self.assertFalse(permissions.exclude(codename__startswith="view_").exists())
+        # Aucune permission d'ajout, de modification ou de suppression de données...
+        self.assertFalse(permissions.exclude(codename__startswith="view_").exclude(
+            content_type__app_label="rapports").exists())
+        # ... seulement la consultation des statistiques et la génération des rapports
+        self.assertEqual(
+            set(permissions.filter(content_type__app_label="rapports").values_list("codename", flat=True)),
+            {roles.TABLEAU, roles.FINANCES, roles.RAPPORTS})
 
     def test_administrateur_gere_les_comptes_mais_pas_le_journal(self):
         self.assertTrue(self.a_perm(roles.ADMINISTRATEUR, "auth.add_user"))

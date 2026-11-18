@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord — PharmaGest{% endblock %}
+{% block contenu %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+  <h1 class="h3 mb-0">Tableau de bord</h1>
+  <form method="get" class="d-flex align-items-end gap-2 flex-wrap">
+    <div><label class="form-label small mb-0" for="du">Du</label><input type="date" class="form-control form-control-sm" id="du" name="du" value="{{ du|date:'Y-m-d' }}"></div>
+    <div><label class="form-label small mb-0" for="au">Au</label><input type="date" class="form-control form-control-sm" id="au" name="au" value="{{ au|date:'Y-m-d' }}"></div>
+    <button type="submit" class="btn btn-sm btn-outline-success">Appliquer la période</button>
+  </form>
+</div>
+
+{% if stock %}
+<h2 class="h5">Stock et alertes</h2>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card card-body h-100"><div class="text-muted small">Médicaments actifs</div><div class="display-6">{{ stock.medicaments_actifs }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card card-body h-100 {% if stock.stocks_faibles %}border-warning{% endif %}"><div class="text-muted small">Stocks faibles</div><div class="display-6">{{ stock.stocks_faibles }}</div><div class="small text-muted">sous le seuil d'alerte</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card card-body h-100 {% if stock.ruptures %}border-danger{% endif %}"><div class="text-muted small">Ruptures de stock</div><div class="display-6">{{ stock.ruptures }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card card-body h-100 {% if stock.lots_proches or stock.lots_perimes %}border-warning{% endif %}"><div class="text-muted small">Péremptions proches ({{ stock.jours }} j)</div><div class="display-6">{{ stock.lots_proches }}</div><div class="small {% if stock.lots_perimes %}text-danger fw-semibold{% else %}text-muted{% endif %}">{{ stock.lots_perimes }} lot(s) périmé(s) en stock</div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="card card-body h-100">
+      <div class="fw-semibold mb-2">Alertes de stock</div>
+      {% for m in stock.liste_ruptures %}<div><span class="badge text-bg-danger">Rupture</span> {{ m.nom_commercial }} {{ m.dosage }}</div>{% endfor %}
+      {% for m in stock.liste_faibles %}<div><span class="badge text-bg-warning">Faible</span> {{ m.nom_commercial }} {{ m.dosage }} — {{ m.stock_disponible }} / seuil {{ m.seuil_alerte }}</div>{% endfor %}
+      {% if not stock.liste_ruptures and not stock.liste_faibles %}<div class="text-muted">Aucune alerte de stock.</div>{% endif %}
+      <div class="mt-2"><a href="{% url 'stock:disponible' %}" class="small">Voir le stock disponible</a></div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="card card-body h-100">
+      <div class="fw-semibold mb-2">Lots périmés ou proches de la péremption</div>
+      {% for l in stock.liste_perimes %}<div><span class="badge text-bg-danger">Périmé</span> {{ l.medicament.nom_commercial }} — lot {{ l.numero_lot }} ({{ l.date_peremption|date:"d/m/Y" }}), {{ l.quantite_restante }} en stock</div>{% endfor %}
+      {% for l in stock.liste_proches %}<div><span class="badge text-bg-warning">Proche</span> {{ l.medicament.nom_commercial }} — lot {{ l.numero_lot }} ({{ l.date_peremption|date:"d/m/Y" }}), {{ l.quantite_restante }} en stock</div>{% endfor %}
+      {% if not stock.liste_perimes and not stock.liste_proches %}<div class="text-muted">Aucun lot concerné.</div>{% endif %}
+      <div class="mt-2"><a href="{% url 'stock:lots' %}?etat=proches" class="small">Voir les lots</a></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if ventes_du_jour %}
+<h2 class="h5">Ventes</h2>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card card-body h-100"><div class="text-muted small">Ventes du jour</div><div class="display-6">{{ ventes_du_jour.nombre }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card card-body h-100"><div class="text-muted small">Montant des ventes du jour</div><div class="fs-3">{{ ventes_du_jour.ca|floatformat:"2g" }} <small>{{ devise }}</small></div></div></div>
+  <div class="col-12 col-lg-6">
+    <div class="card card-body h-100">
+      <div class="fw-semibold mb-2">Produits les plus vendus ({{ du|date:"d/m/Y" }} → {{ au|date:"d/m/Y" }})</div>
+      {% for t in ventes.produits_les_plus_vendus %}
+        <div class="d-flex justify-content-between"><span>{{ t.medicament }}</span><span class="text-muted">{{ t.quantite }} unité(s)</span></div>
+      {% empty %}<div class="text-muted">Aucune vente sur la période.</div>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if financieres %}
+<h2 class="h5">Chiffres de la période <small class="text-muted">({{ du|date:"d/m/Y" }} → {{ au|date:"d/m/Y" }})</small></h2>
+<div class="row g-3 mb-2">
+  <div class="col-6 col-lg-3"><div class="card card-body h-100"><div class="text-muted small">Chiffre d'affaires</div><div class="fs-4">{{ ventes.ca|floatformat:"2g" }} <small>{{ devise }}</small></div><div class="small text-muted">{{ ventes.nombre_ventes }} vente(s) validée(s), nettes des retours</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card card-body h-100"><div class="text-muted small">Encaissements</div><div class="fs-4">{{ ventes.encaissements|floatformat:"2g" }} <small>{{ devise }}</small></div><div class="small text-muted">paiements confirmés · {{ ventes.en_attente|floatformat:"2g" }} en attente</div></div></div>
+  <div class="col-6 col-lg-3"><div class="card card-body h-100"><div class="text-muted small">Marge commerciale brute</div><div class="fs-4">{{ ventes.marge_brute|floatformat:"2g" }} <small>{{ devise }}</small></div><div class="small text-muted">CA − coût d'achat ({{ ventes.cout_achat|floatformat:"2g" }})</div></div></div>
+  {% if achats %}
+  <div class="col-6 col-lg-3"><div class="card card-body h-100"><div class="text-muted small">Achats commandés</div><div class="fs-4">{{ achats.montant_commande|floatformat:"2g" }} <small>{{ devise }}</small></div><div class="small text-muted">{{ achats.nombre_commandes }} commande(s) · réceptionné : {{ achats.montant_receptionne|floatformat:"2g" }}</div></div></div>
+  {% endif %}
+</div>
+<p class="small text-muted mb-4">Le chiffre d'affaires, les encaissements et la marge sont trois choses différentes. La marge commerciale brute n'est <strong>pas un bénéfice net</strong> : les autres charges (salaires, loyer, taxes…) ne sont pas prises en compte. Remboursements de retours sur la période : {{ ventes.remboursements|floatformat:"2g" }} {{ devise }}.</p>
+
+<h2 class="h5">Ventes par jour</h2>
+<div class="card card-body mb-4">
+  {% for j in ventes.par_jour %}
+  <div class="row align-items-center mb-1">
+    <div class="col-3 col-md-2 small">{{ j.jour|date:"d/m/Y" }}</div>
+    <div class="col-6 col-md-8"><div class="progress" role="progressbar" aria-label="CA du {{ j.jour|date:'d/m/Y' }}"><div class="progress-bar bg-success" style="width: {{ j.pourcentage }}%"></div></div></div>
+    <div class="col-3 col-md-2 small text-end">{{ j.ca|floatformat:"2g" }} ({{ j.nombre }})</div>
+  </div>
+  {% empty %}<div class="text-muted">Aucune vente sur la période.</div>{% endfor %}
+</div>
+{% endif %}
+
+{% if not stock and not ventes_du_jour and not financieres %}
+  <div class="p-5 bg-white rounded shadow-sm"><p class="lead mb-0">Votre rôle ne donne accès à aucun indicateur.</p></div>
+{% endif %}
+{% endblock %}

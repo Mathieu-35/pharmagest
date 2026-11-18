@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth.decorators import login_required
 from django.urls import include, path
-from django.views.generic import TemplateView
+
+from rapports.views import tableau_de_bord
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -14,7 +14,8 @@ urlpatterns = [
     path("stock/", include("stock.urls")),
     path("ventes/", include("ventes.urls")),
     path("clients/", include("clients.urls")),
-    path("", login_required(TemplateView.as_view(template_name="accueil.html")), name="accueil"),
+    path("rapports/", include("rapports.urls")),
+    path("", tableau_de_bord, name="accueil"),
 ]
 
 # Service des photos en développement uniquement

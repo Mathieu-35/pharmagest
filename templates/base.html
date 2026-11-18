@@ -61,6 +61,9 @@
           {% if perms.clients.view_client %}
             <li class="nav-item"><a class="nav-link" href="{% url 'clients:liste' %}">Clients</a></li>
           {% endif %}
+          {% if perms.rapports.generer_rapports %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'rapports:liste' %}">Rapports</a></li>
+          {% endif %}
           {% if perms.auth.view_user %}
             <li class="nav-item"><a class="nav-link" href="{% url 'utilisateurs:liste' %}">Utilisateurs</a></li>
           {% endif %}

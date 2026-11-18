@@ -12,7 +12,8 @@
       {% endif %}
       <a href="{% url 'ventes:annuler' vente.pk %}" class="btn btn-outline-danger">Annuler la vente</a>
     {% endif %}
-    <button type="button" class="btn btn-outline-secondary" onclick="window.print()">Imprimer</button>
+    <a href="{% url 'rapports:recu' vente.pk %}" target="_blank" class="btn btn-outline-secondary">Reçu PDF</a>
+    <a href="{% url 'rapports:facture' vente.pk %}" target="_blank" class="btn btn-outline-secondary">Facture PDF</a>
     <a href="{% url 'ventes:liste' %}" class="btn btn-outline-secondary">Retour à l'historique</a>
   </div>
 </div>

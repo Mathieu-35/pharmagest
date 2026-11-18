@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titre %}Rapports — PharmaGest{% endblock %}
+{% block contenu %}
+<h1 class="h3 mb-3">Rapports PDF</h1>
+
+<div class="row g-3">
+  {% if peut_stock %}
+  <div class="col-12 col-md-6">
+    <div class="card card-body h-100">
+      <div class="fw-semibold">Rapport de stock</div>
+      <p class="text-muted small">Stock disponible, seuils, quantités bloquées ou périmées et état de chaque médicament actif.</p>
+      <div><a class="btn btn-outline-success" href="{% url 'rapports:stock' %}" target="_blank">Ouvrir le PDF</a></div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6">
+    <div class="card card-body h-100">
+      <div class="fw-semibold">Produits proches de la péremption</div>
+      <p class="text-muted small">Lots périmés encore en stock et lots qui expirent bientôt.</p>
+      <div><a class="btn btn-outline-success" href="{% url 'rapports:peremptions' %}" target="_blank">Ouvrir le PDF</a></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if peut_ventes or peut_achats %}
+  <div class="col-12">
+    <form method="get" class="card card-body" target="_blank">
+      <div class="fw-semibold mb-2">Rapports sur une période</div>
+      <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-3"><label class="form-label small mb-0" for="du">Du</label><input type="date" class="form-control" id="du" name="du" value="{{ du|date:'Y-m-d' }}"></div>
+        <div class="col-6 col-md-3"><label class="form-label small mb-0" for="au">Au</label><input type="date" class="form-control" id="au" name="au" value="{{ au|date:'Y-m-d' }}"></div>
+        <div class="col-12 col-md-6 d-flex gap-2 flex-wrap">
+          {% if peut_ventes %}<button type="submit" formaction="{% url 'rapports:ventes' %}" class="btn btn-outline-success">Rapport des ventes</button>{% endif %}
+          {% if peut_achats %}<button type="submit" formaction="{% url 'rapports:achats' %}" class="btn btn-outline-success">Rapport des achats</button>{% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+<p class="text-muted small mt-3">Le reçu, la facture, le bon de commande et le bon de réception s'ouvrent depuis la page de la vente ou de la commande concernée.</p>
+{% endblock %}
