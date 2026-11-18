@@ -87,8 +87,7 @@ erDiagram
     COMMANDE_ACHAT {
         int id PK
         string statut
-        date date_commande
-        decimal montant_total
+        datetime date_commande
     }
     LIGNE_ACHAT {
         int id PK
@@ -115,7 +114,7 @@ erDiagram
     VENTE {
         int id PK
         datetime date
-        decimal total
+        uuid jeton UK
         string statut
     }
     LIGNE_VENTE {
@@ -160,15 +159,16 @@ Clés primaires soulignées par `PK`, clés étrangères par `FK`.
 | `medicament` | id PK, nom_commercial, denomination_generique, categorie_id FK, forme, dosage, laboratoire, code_barres (unique, nullable), photo, prix_achat, prix_vente, seuil_alerte, statut, date_creation |
 | `fournisseur` | id PK, nom, adresse, telephone, email, numero_fiscal, contact_principal, actif |
 | `client` | id PK, nom, telephone, actif |
-| `commande_achat` | id PK, fournisseur_id FK, utilisateur_id FK, statut, date_commande, montant_total |
+| `commande_achat` | id PK, fournisseur_id FK, utilisateur_id FK, statut, date_commande ; le montant total est calculé depuis les lignes |
 | `ligne_achat` | id PK, commande_id FK, medicament_id FK, quantite, prix_achat |
 | `reception_achat` | id PK, commande_id FK, utilisateur_id FK, date_reception |
-| `lot_stock` | id PK, medicament_id FK, reception_id FK (nullable), numero_lot, date_peremption, quantite_recue, quantite_restante, bloque |
+| `ligne_reception` | id PK, reception_id FK, ligne_achat_id FK, lot_id FK, quantite |
+| `lot_stock` | id PK, medicament_id FK, numero_lot, date_peremption, quantite_recue, quantite_restante, bloque (unique : medicament + numero_lot) |
 | `mouvement_stock` | id PK, lot_id FK, utilisateur_id FK, type (entrée, sortie, retour, correction), quantite, date, motif |
-| `vente` | id PK, client_id FK (nullable), utilisateur_id FK, date, total, statut |
+| `vente` | id PK, client_id FK (nullable), utilisateur_id FK, jeton (unique, anti double validation), date, statut ; le total est calculé depuis les lignes |
 | `ligne_vente` | id PK, vente_id FK, medicament_id FK, lot_id FK, quantite, prix_applique |
 | `paiement` | id PK, vente_id FK, mode, montant, statut |
-| `retour_vente` | id PK, vente_id FK, ligne_vente_id FK, utilisateur_id FK, quantite, motif, remis_en_stock, date |
+| `retour_vente` | id PK, ligne_vente_id FK, utilisateur_id FK, quantite, motif, remis_en_stock, date |
 | `utilisateur` | table `auth_user` de Django + groupes (rôles) et permissions |
 | `journal_audit` | id PK, utilisateur_id FK, action, detail, date |
 
